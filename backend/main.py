@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import init_db
+from app.core.config import settings
 from app.models.schemas import HealthOut
 
 # Route imports (uncommented as each router is implemented)
@@ -16,7 +17,8 @@ from app.api.routes import weights as weights_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()
+    if not settings.is_production:
+        await init_db()
     yield
 
 
