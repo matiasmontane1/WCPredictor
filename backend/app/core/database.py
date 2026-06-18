@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.pool import NullPool
 from app.core.config import settings
 
 
@@ -11,8 +12,12 @@ def _make_engine():
     url = settings.DATABASE_URL
     if url.startswith("sqlite"):
         return create_async_engine(url, connect_args={"check_same_thread": False})
-    # statement_cache_size=0 required for pgbouncer Transaction Pooler (Supabase)
-    return create_async_engine(url, connect_args={"statement_cache_size": 0})
+    # NullPool + statement_cache_size=0: required for Supabase pgbouncer Transaction Pooler
+    return create_async_engine(
+        url,
+        connect_args={"statement_cache_size": 0},
+        poolclass=NullPool,
+    )
 
 
 engine = _make_engine()
