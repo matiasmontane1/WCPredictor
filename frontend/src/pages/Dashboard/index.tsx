@@ -36,9 +36,11 @@ export function Dashboard() {
 
       {!isLoading && !error && matches && matches.length > 0 && (
         <div className="space-y-3">
-          {matches.map((match) => (
-            <MatchCard key={match.id} match={match} />
-          ))}
+          {matches
+            .filter((m) => !['FINISHED', 'AWARDED'].includes(m.status))
+            .map((match) => (
+              <MatchCard key={match.id} match={match} />
+            ))}
         </div>
       )}
     </div>
