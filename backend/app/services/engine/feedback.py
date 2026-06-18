@@ -1,0 +1,93 @@
+import numpy as np
+from datetime import datetime
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.crud import prediction_log as log_crud
+from app.crud import weights as weights_crud
+from app.crud.metrics import get_metrics_for_match
+from app.services.engine.poisson import score_probability
+
+MIN_MATCHES_FOR_UPDATE = 5
+
+
+def compute_brier_score(prob_matrix: np.ndarray, actual_home: int, actual_away: int) -> float:
+    size = prob_matrix.shape[0]
+    actual_h = min(actual_home, size - 1)
+    actual_a = min(actual_away, size - 1)
+
+    target = np.zeros_like(prob_matrix)
+    target[actual_h][actual_a] = 1.0
+    return float(np.sum((prob_matrix - target) ** 2))
+
+
+async def update_weights(db: AsyncSession, match_id: int) -> dict:
+    metrics = await get_metrics_for_match(db, match_id)
+    if metrics is None:
+        return {}
+
+    from app.crud.matches import get_match_by_id
+    match = await get_match_by_id(db, match_id)
+    if match is None or match.actual_home_goals is None:
+        return {}
+
+    existing_log = await log_crud.get_log_for_match(db, match_id)
+    if existing_log:
+        return {}
+
+    weights = await weights_crud.get_weights(db)
+
+    lh_xg = metrics.lambda_xg_home or 1.2
+    la_xg = metrics.lambda_xg_away or 1.0
+    lh_mkt = metrics.lambda_market_home or 1.2
+    la_mkt = metrics.lambda_market_away or 1.0
+
+    matrix_a = score_probability(lh_xg, la_xg)
+    matrix_b = score_probability(lh_mkt, la_mkt)
+
+    bs_a = compute_brier_score(matrix_a, match.actual_home_goals, match.actual_away_goals)
+    bs_b = compute_brier_score(matrix_b, match.actual_home_goals, match.actual_away_goals)
+
+    log_data = {
+        "match_id": match_id,
+        "actual_home_goals": match.actual_home_goals,
+        "actual_away_goals": match.actual_away_goals,
+        "model_a_error": bs_a,
+        "model_b_error": bs_b,
+        "weight_xg_before": weights.weight_xg,
+        "weight_market_before": weights.weight_market,
+        "weight_xg_after": weights.weight_xg,
+        "weight_market_after": weights.weight_market,
+        "evaluated_at": datetime.utcnow(),
+    }
+
+    new_count = weights.matches_evaluated + 1
+    new_w_xg = weights.weight_xg
+    new_w_mkt = weights.weight_market
+
+    if new_count >= MIN_MATCHES_FOR_UPDATE:
+        all_logs = await log_crud.get_all_logs(db)
+        all_bs_a = [l.model_a_error for l in all_logs if l.model_a_error is not None] + [bs_a]
+        all_bs_b = [l.model_b_error for l in all_logs if l.model_b_error is not None] + [bs_b]
+
+        cum_a = float(np.mean(all_bs_a))
+        cum_b = float(np.mean(all_bs_b))
+
+        score_a = max(0.0, 1.0 - cum_a)
+        score_b = max(0.0, 1.0 - cum_b)
+        total = score_a + score_b
+
+        if total > 0:
+            new_w_xg = score_a / total
+            new_w_mkt = score_b / total
+
+    log_data["weight_xg_after"] = new_w_xg
+    log_data["weight_market_after"] = new_w_mkt
+
+    await log_crud.create_log_entry(db, log_data)
+    updated = await weights_crud.update_weights(db, new_w_xg, new_w_mkt, new_count)
+
+    return {
+        "weight_xg": updated.weight_xg,
+        "weight_market": updated.weight_market,
+        "matches_evaluated": updated.matches_evaluated,
+    }
