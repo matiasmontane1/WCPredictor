@@ -7,6 +7,7 @@ from pydantic import BaseModel, field_validator
 class PhaseConfigCreate(BaseModel):
     phase_name: str
     points_winner: int
+    points_goal_diff: int = 0
     points_exact_score: int
 
     @field_validator("phase_name")
@@ -18,7 +19,7 @@ class PhaseConfigCreate(BaseModel):
             raise ValueError("phase_name max 50 chars")
         return v.strip()
 
-    @field_validator("points_winner", "points_exact_score")
+    @field_validator("points_winner", "points_goal_diff", "points_exact_score")
     @classmethod
     def points_non_negative(cls, v: int) -> int:
         if v < 0:
@@ -31,6 +32,7 @@ class PhaseConfigOut(BaseModel):
     id: int
     phase_name: str
     points_winner: int
+    points_goal_diff: int = 0
     points_exact_score: int
     is_active: bool
     created_at: str

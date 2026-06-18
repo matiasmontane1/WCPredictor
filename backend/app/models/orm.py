@@ -10,6 +10,7 @@ class PhaseConfig(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     phase_name: Mapped[str] = mapped_column(String(50), nullable=False)
     points_winner: Mapped[int] = mapped_column(Integer, nullable=False)
+    points_goal_diff: Mapped[int] = mapped_column(Integer, server_default="0", nullable=False)
     points_exact_score: Mapped[int] = mapped_column(Integer, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

@@ -4,6 +4,7 @@ import { useCreatePhase } from '../../api/client'
 export function PhaseConfigForm() {
   const [phaseName, setPhaseName] = useState('')
   const [pointsWinner, setPointsWinner] = useState(1)
+  const [pointsGoalDiff, setPointsGoalDiff] = useState(2)
   const [pointsExact, setPointsExact] = useState(3)
   const [error, setError] = useState('')
 
@@ -17,11 +18,17 @@ export function PhaseConfigForm() {
       return
     }
     create.mutate(
-      { phase_name: phaseName, points_winner: pointsWinner, points_exact_score: pointsExact },
+      {
+        phase_name: phaseName,
+        points_winner: pointsWinner,
+        points_goal_diff: pointsGoalDiff,
+        points_exact_score: pointsExact,
+      },
       {
         onSuccess: () => {
           setPhaseName('')
           setPointsWinner(1)
+          setPointsGoalDiff(2)
           setPointsExact(3)
         },
         onError: (err) => setError(err.message),
@@ -39,9 +46,9 @@ export function PhaseConfigForm() {
         placeholder="Ej: Grupos, Octavos, Final"
         className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-green-500 placeholder-slate-500"
       />
-      <div className="flex gap-3">
-        <div className="flex-1">
-          <label className="text-slate-400 text-xs block mb-1">Pts por Ganador</label>
+      <div className="grid grid-cols-3 gap-2">
+        <div>
+          <label className="text-slate-400 text-xs block mb-1">Ganador</label>
           <input
             type="number"
             min={0}
@@ -50,8 +57,18 @@ export function PhaseConfigForm() {
             className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-green-500"
           />
         </div>
-        <div className="flex-1">
-          <label className="text-slate-400 text-xs block mb-1">Pts por Exacto</label>
+        <div>
+          <label className="text-slate-400 text-xs block mb-1">Dif. goles</label>
+          <input
+            type="number"
+            min={0}
+            value={pointsGoalDiff}
+            onChange={(e) => setPointsGoalDiff(Number(e.target.value))}
+            className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-green-500"
+          />
+        </div>
+        <div>
+          <label className="text-slate-400 text-xs block mb-1">Exacto</label>
           <input
             type="number"
             min={0}

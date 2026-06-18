@@ -24,6 +24,7 @@ export interface PhaseConfig {
   id: number
   phase_name: string
   points_winner: number
+  points_goal_diff: number
   points_exact_score: number
   is_active: boolean
   created_at: string
@@ -97,7 +98,7 @@ export function usePhaseConfigs() {
 export function useCreatePhase() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: { phase_name: string; points_winner: number; points_exact_score: number }) =>
+    mutationFn: (data: { phase_name: string; points_winner: number; points_goal_diff: number; points_exact_score: number }) =>
       api<PhaseConfig>('/config/phase', { method: 'POST', body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['phases'] }),
   })
