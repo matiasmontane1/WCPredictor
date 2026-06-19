@@ -1,10 +1,16 @@
+import asyncio
+import logging
 from contextlib import asynccontextmanager
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.database import init_db
+from app.core.database import AsyncSessionLocal, init_db
 from app.core.config import settings
 from app.models.schemas import HealthOut
+from app.services.sync_service import run_daily_sync
 
 # Route imports (uncommented as each router is implemented)
 from app.api.routes import config as config_router
@@ -14,12 +20,30 @@ from app.api.routes import validate as validate_router
 from app.api.routes import results as results_router
 from app.api.routes import weights as weights_router
 
+logger = logging.getLogger(__name__)
+
+
+async def _auto_sync():
+    async with AsyncSessionLocal() as db:
+        await run_daily_sync(db, "auto")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if not settings.is_production:
         await init_db()
+
+    # Startup sync
+    asyncio.create_task(_auto_sync())
+
+    # Auto-sync every 4 hours
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(_auto_sync, IntervalTrigger(hours=4))
+    scheduler.start()
+
     yield
+
+    scheduler.shutdown(wait=False)
 
 
 app = FastAPI(
