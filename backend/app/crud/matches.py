@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 CHILE_TZ = ZoneInfo("America/Santiago")
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,7 +47,9 @@ async def get_past_matches(db: AsyncSession) -> list[Match]:
     today = datetime.now(CHILE_TZ).date().isoformat()
     result = await db.execute(
         select(Match)
-        .where(Match.match_date < today)
+        .where(
+            or_(Match.match_date < today, Match.actual_home_goals.is_not(None))
+        )
         .order_by(Match.match_date.desc(), Match.kickoff_time.desc())
     )
     return list(result.scalars().all())

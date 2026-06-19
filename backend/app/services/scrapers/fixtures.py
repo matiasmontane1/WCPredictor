@@ -75,3 +75,41 @@ async def get_today_matches() -> list[dict]:
     except httpx.HTTPError as e:
         logger.error(f"Fixtures scraper error: {e}")
         return []
+
+
+async def get_all_wc_matches() -> list[dict]:
+    """Fetch the full WC 2026 schedule (all matchdays) for DB completeness."""
+    today = _today_chile()
+    url = f"{BASE_URL}/competitions/WC/matches"
+    headers = {"X-Auth-Token": settings.FOOTBALL_DATA_API_KEY}
+
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            resp = await client.get(url, headers=headers)
+
+        if resp.status_code == 429:
+            logger.warning("football-data.org rate limit hit on full WC fetch")
+            return []
+        if resp.status_code == 404:
+            return []
+
+        resp.raise_for_status()
+        data = resp.json()
+        matches = []
+        for m in data.get("matches", []):
+            utc_date = m.get("utcDate", "")
+            chile_date = _utc_str_to_chile_date(utc_date) if utc_date else today
+            matches.append({
+                "external_id": str(m["id"]),
+                "match_date": chile_date,
+                "kickoff_time": utc_date,
+                "home_team": m["homeTeam"]["name"],
+                "away_team": m["awayTeam"]["name"],
+                "phase": m.get("stage"),
+                "status": m.get("status", "SCHEDULED"),
+            })
+        return matches
+
+    except httpx.HTTPError as e:
+        logger.error(f"Full WC fixtures scraper error: {e}")
+        return []

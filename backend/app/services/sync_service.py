@@ -45,6 +45,13 @@ async def run_daily_sync(db: AsyncSession, job_id: str) -> None:
     errors = []
 
     try:
+        # Step 0: Sync full WC schedule to populate DB and fix any wrong dates
+        logger.info(f"[{job_id}] Syncing full WC schedule...")
+        all_wc = await fixtures_scraper.get_all_wc_matches()
+        for m in all_wc:
+            await matches_crud.upsert_match(db, m)
+        logger.info(f"[{job_id}] Upserted {len(all_wc)} WC fixtures")
+
         # Step 1: Fetch fixtures (3-day window to correct UTC/Chile date mismatches)
         logger.info(f"[{job_id}] Fetching fixtures (yesterday/today/tomorrow)...")
         today_str = datetime.now(CHILE_TZ).date().isoformat()
