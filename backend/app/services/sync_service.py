@@ -11,8 +11,10 @@ CHILE_TZ = ZoneInfo("America/Santiago")
 from app.crud import matches as matches_crud
 from app.crud import metrics as metrics_crud
 from app.crud import suggestions as suggestions_crud
+from app.crud import prediction_log as log_crud
 from app.crud.phase_config import get_active_phase
 from app.crud.weights import get_weights
+from app.services.engine import feedback as feedback_engine
 from app.services.scrapers import fixtures as fixtures_scraper
 from app.services.scrapers import odds as odds_scraper
 from app.services.scrapers import xg as xg_scraper
@@ -48,9 +50,33 @@ async def run_daily_sync(db: AsyncSession, job_id: str) -> None:
         # Step 0: Sync full WC schedule to populate DB and fix any wrong dates
         logger.info(f"[{job_id}] Syncing full WC schedule...")
         all_wc = await fixtures_scraper.get_all_wc_matches()
+        all_wc_objects = []
         for m in all_wc:
-            await matches_crud.upsert_match(db, m)
+            obj = await matches_crud.upsert_match(db, m)
+            all_wc_objects.append((m, obj))
         logger.info(f"[{job_id}] Upserted {len(all_wc)} WC fixtures")
+
+        # Step 0.5: Auto-evaluate finished matches with scores from API
+        auto_evaluated = 0
+        for m_data, match_obj in all_wc_objects:
+            if m_data.get("status") != "FINISHED":
+                continue
+            score_home = m_data.get("score_home")
+            score_away = m_data.get("score_away")
+            if score_home is None or score_away is None:
+                continue
+            updated = await matches_crud.auto_set_result(db, match_obj.id, score_home, score_away)
+            if updated is None:
+                continue  # already had a result
+            suggestions = await suggestions_crud.get_suggestions_for_match(db, match_obj.id)
+            if suggestions:
+                existing_log = await log_crud.get_log_for_match(db, match_obj.id)
+                if existing_log is None:
+                    await feedback_engine.update_weights(db, match_obj.id)
+                    auto_evaluated += 1
+                    logger.info(f"[{job_id}] Auto-evaluated {match_obj.home_team} vs {match_obj.away_team} ({score_home}-{score_away})")
+        if auto_evaluated:
+            logger.info(f"[{job_id}] Auto-evaluated {auto_evaluated} finished matches")
 
         # Step 1: Fetch fixtures (3-day window to correct UTC/Chile date mismatches)
         logger.info(f"[{job_id}] Fetching fixtures (yesterday/today/tomorrow)...")

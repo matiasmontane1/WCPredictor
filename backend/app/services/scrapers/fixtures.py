@@ -61,7 +61,7 @@ async def get_today_matches() -> list[dict]:
             utc_date = m.get("utcDate", "")
             chile_date = _utc_str_to_chile_date(utc_date) if utc_date else today_str
             api_status = m.get("status", "SCHEDULED")
-            matches.append({
+            entry = {
                 "external_id": str(m["id"]),
                 "match_date": chile_date,
                 "kickoff_time": utc_date,
@@ -69,7 +69,13 @@ async def get_today_matches() -> list[dict]:
                 "away_team": m["awayTeam"]["name"],
                 "phase": m.get("stage"),
                 "status": api_status,
-            })
+            }
+            if api_status == "FINISHED":
+                ft = m.get("score", {}).get("fullTime", {})
+                if ft.get("home") is not None and ft.get("away") is not None:
+                    entry["score_home"] = ft["home"]
+                    entry["score_away"] = ft["away"]
+            matches.append(entry)
         return matches
 
     except httpx.HTTPError as e:
@@ -99,15 +105,22 @@ async def get_all_wc_matches() -> list[dict]:
         for m in data.get("matches", []):
             utc_date = m.get("utcDate", "")
             chile_date = _utc_str_to_chile_date(utc_date) if utc_date else today
-            matches.append({
+            api_status = m.get("status", "SCHEDULED")
+            entry = {
                 "external_id": str(m["id"]),
                 "match_date": chile_date,
                 "kickoff_time": utc_date,
                 "home_team": m["homeTeam"]["name"],
                 "away_team": m["awayTeam"]["name"],
                 "phase": m.get("stage"),
-                "status": m.get("status", "SCHEDULED"),
-            })
+                "status": api_status,
+            }
+            if api_status == "FINISHED":
+                ft = m.get("score", {}).get("fullTime", {})
+                if ft.get("home") is not None and ft.get("away") is not None:
+                    entry["score_home"] = ft["home"]
+                    entry["score_away"] = ft["away"]
+            matches.append(entry)
         return matches
 
     except httpx.HTTPError as e:

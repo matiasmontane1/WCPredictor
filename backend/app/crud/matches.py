@@ -67,6 +67,19 @@ async def get_match_by_id(db: AsyncSession, match_id: int) -> Match | None:
     return result.scalar_one_or_none()
 
 
+async def auto_set_result(db: AsyncSession, match_id: int, home_goals: int, away_goals: int) -> Match | None:
+    """Set result only if not already recorded. Used by auto-sync."""
+    match = await get_match_by_id(db, match_id)
+    if match is None or match.actual_home_goals is not None:
+        return None
+    match.actual_home_goals = home_goals
+    match.actual_away_goals = away_goals
+    match.status = "FINISHED"
+    await db.commit()
+    await db.refresh(match)
+    return match
+
+
 async def set_match_result(db: AsyncSession, match_id: int, home_goals: int, away_goals: int) -> Match:
     match = await get_match_by_id(db, match_id)
     if match is None:
