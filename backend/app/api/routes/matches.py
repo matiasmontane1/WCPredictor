@@ -36,97 +36,88 @@ def _build_suggestion_pair(suggestions) -> SuggestionPair:
     )
 
 
+def _fresh_suggestion_pair(metrics, weights, phase) -> SuggestionPair | None:
+    """Recompute suggestions live so EV is always consistent with current phase config."""
+    if not metrics or not metrics.lambda_xg_home or not metrics.lambda_market_home:
+        return None
+    prob_matrix = ensemble_distribution(metrics, weights)
+    ev_matrix = calculate_ev(prob_matrix, phase) if phase else prob_matrix.copy()
+    raw = get_suggestions(ev_matrix, prob_matrix)
+    cons, agg = raw["conservative"], raw["aggressive"]
+    return SuggestionPair(
+        conservative=SuggestionOut(score=cons["score"], probability=cons["probability"], ev=cons["ev"]),
+        aggressive=SuggestionOut(score=agg["score"], probability=agg["probability"], ev=agg["ev"]),
+    )
+
+
+def _build_summary(match, suggestions, metrics, weights, phase) -> MatchSummary:
+    fresh = _fresh_suggestion_pair(metrics, weights, phase) if suggestions else None
+    return MatchSummary(
+        id=match.id,
+        match_date=match.match_date,
+        kickoff_time=match.kickoff_time,
+        home_team=match.home_team,
+        away_team=match.away_team,
+        phase=match.phase,
+        status=match.status,
+        actual_home_goals=match.actual_home_goals,
+        actual_away_goals=match.actual_away_goals,
+        suggestions=fresh or (_build_suggestion_pair(suggestions) if suggestions else None),
+        has_metrics=metrics is not None,
+    )
+
+
 @router.get("/today", response_model=list[MatchSummary])
 async def get_today_matches(db: AsyncSession = Depends(get_db)):
     matches = await matches_crud.get_today_matches(db)
+    weights = await get_weights(db)
+    phase = await get_active_phase(db)
     result = []
     for match in matches:
         suggestions = await suggestions_crud.get_suggestions_for_match(db, match.id)
         metrics = await metrics_crud.get_metrics_for_match(db, match.id)
-        result.append(MatchSummary(
-            id=match.id,
-            match_date=match.match_date,
-            kickoff_time=match.kickoff_time,
-            home_team=match.home_team,
-            away_team=match.away_team,
-            phase=match.phase,
-            status=match.status,
-            actual_home_goals=match.actual_home_goals,
-            actual_away_goals=match.actual_away_goals,
-            suggestions=_build_suggestion_pair(suggestions) if suggestions else None,
-            has_metrics=metrics is not None,
-        ))
+        result.append(_build_summary(match, suggestions, metrics, weights, phase))
     return result
 
 
 @router.get("/past", response_model=list[MatchSummary])
 async def get_past_matches(db: AsyncSession = Depends(get_db)):
     matches = await matches_crud.get_past_matches(db)
+    weights = await get_weights(db)
+    phase = await get_active_phase(db)
     result = []
     for match in matches:
         suggestions = await suggestions_crud.get_suggestions_for_match(db, match.id)
         if not suggestions:
             continue
         metrics = await metrics_crud.get_metrics_for_match(db, match.id)
-        result.append(MatchSummary(
-            id=match.id,
-            match_date=match.match_date,
-            kickoff_time=match.kickoff_time,
-            home_team=match.home_team,
-            away_team=match.away_team,
-            phase=match.phase,
-            status=match.status,
-            actual_home_goals=match.actual_home_goals,
-            actual_away_goals=match.actual_away_goals,
-            suggestions=_build_suggestion_pair(suggestions),
-            has_metrics=metrics is not None,
-        ))
+        result.append(_build_summary(match, suggestions, metrics, weights, phase))
     return result
 
 
 @router.get("/yesterday", response_model=list[MatchSummary])
 async def get_yesterday_matches(db: AsyncSession = Depends(get_db)):
     matches = await matches_crud.get_yesterday_matches(db)
+    weights = await get_weights(db)
+    phase = await get_active_phase(db)
     result = []
     for match in matches:
         suggestions = await suggestions_crud.get_suggestions_for_match(db, match.id)
         metrics = await metrics_crud.get_metrics_for_match(db, match.id)
-        result.append(MatchSummary(
-            id=match.id,
-            match_date=match.match_date,
-            kickoff_time=match.kickoff_time,
-            home_team=match.home_team,
-            away_team=match.away_team,
-            phase=match.phase,
-            status=match.status,
-            actual_home_goals=match.actual_home_goals,
-            actual_away_goals=match.actual_away_goals,
-            suggestions=_build_suggestion_pair(suggestions) if suggestions else None,
-            has_metrics=metrics is not None,
-        ))
+        result.append(_build_summary(match, suggestions, metrics, weights, phase))
     return result
 
 
 @router.get("/all", response_model=list[MatchSummary])
 async def get_all_matches(db: AsyncSession = Depends(get_db)):
     matches = await matches_crud.get_all_matches(db)
+    weights = await get_weights(db)
+    phase = await get_active_phase(db)
     result = []
     for match in matches:
         suggestions = await suggestions_crud.get_suggestions_for_match(db, match.id)
         metrics = await metrics_crud.get_metrics_for_match(db, match.id)
-        result.append(MatchSummary(
-            id=match.id,
-            match_date=match.match_date,
-            kickoff_time=match.kickoff_time,
-            home_team=match.home_team,
-            away_team=match.away_team,
-            phase=match.phase,
-            status=match.status,
-            actual_home_goals=match.actual_home_goals if hasattr(match, 'actual_home_goals') else None,
-            actual_away_goals=match.actual_away_goals if hasattr(match, 'actual_away_goals') else None,
-            suggestions=_build_suggestion_pair(suggestions) if suggestions else None,
-            has_metrics=metrics is not None,
-        ))
+        result.append(_build_summary(match, suggestions, metrics, weights, phase))
     return result
 
 
@@ -161,11 +152,9 @@ async def get_match_detail(match_id: int, db: AsyncSession = Depends(get_db)):
             for idx, it in enumerate(items[:15])
         ]
 
-        # Recompute suggestions fresh so EV matches the distribution
         if suggestions:
             raw = get_suggestions(ev_matrix, prob_matrix)
-            cons = raw["conservative"]
-            agg = raw["aggressive"]
+            cons, agg = raw["conservative"], raw["aggressive"]
             fresh_suggestions = SuggestionPair(
                 conservative=SuggestionOut(score=cons["score"], probability=cons["probability"], ev=cons["ev"]),
                 aggressive=SuggestionOut(score=agg["score"], probability=agg["probability"], ev=agg["ev"]),
