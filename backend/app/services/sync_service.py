@@ -2,8 +2,11 @@ import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
+
+CHILE_TZ = ZoneInfo("America/Santiago")
 
 from app.crud import matches as matches_crud
 from app.crud import metrics as metrics_crud
@@ -42,14 +45,16 @@ async def run_daily_sync(db: AsyncSession, job_id: str) -> None:
     errors = []
 
     try:
-        # Step 1: Fetch fixtures
-        logger.info(f"[{job_id}] Fetching today's fixtures...")
-        today_matches = await fixtures_scraper.get_today_matches()
+        # Step 1: Fetch fixtures (3-day window to correct UTC/Chile date mismatches)
+        logger.info(f"[{job_id}] Fetching fixtures (yesterday/today/tomorrow)...")
+        today_str = datetime.now(CHILE_TZ).date().isoformat()
+        all_matches = await fixtures_scraper.get_today_matches()
         match_objects = []
-        for m in today_matches:
+        for m in all_matches:
             obj = await matches_crud.upsert_match(db, m)
-            match_objects.append(obj)
             fixtures_synced += 1
+            if obj.match_date == today_str:
+                match_objects.append(obj)
 
         if not match_objects:
             logger.info(f"[{job_id}] No matches today.")

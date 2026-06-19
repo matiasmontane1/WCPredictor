@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 BASE_URL = "https://api.football-data.org/v4"
 CHILE_TZ = ZoneInfo("America/Santiago")
-UTC_TZ = ZoneInfo("UTC")
 
 
 def _today_chile() -> str:
@@ -27,10 +26,21 @@ def _utc_str_to_chile_date(utc_str: str) -> str:
 
 
 async def get_today_matches() -> list[dict]:
-    today = _today_chile()
+    """Fetch matches for yesterday+today+tomorrow UTC range.
+
+    Chile is UTC-3 in winter, so a match at 00:30 UTC June 19 is
+    21:30 Chile June 18. Querying only today Chile date would miss it.
+    We fetch a 3-day UTC window and let _utc_str_to_chile_date assign
+    the correct Chile date to each match.
+    """
+    today_chile = datetime.now(CHILE_TZ).date()
+    date_from = (today_chile - timedelta(days=1)).isoformat()
+    date_to = (today_chile + timedelta(days=1)).isoformat()
+    today_str = today_chile.isoformat()
+
     url = f"{BASE_URL}/competitions/WC/matches"
     headers = {"X-Auth-Token": settings.FOOTBALL_DATA_API_KEY}
-    params = {"dateFrom": today, "dateTo": today}
+    params = {"dateFrom": date_from, "dateTo": date_to}
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
@@ -49,7 +59,7 @@ async def get_today_matches() -> list[dict]:
         matches = []
         for m in data.get("matches", []):
             utc_date = m.get("utcDate", "")
-            chile_date = _utc_str_to_chile_date(utc_date) if utc_date else today
+            chile_date = _utc_str_to_chile_date(utc_date) if utc_date else today_str
             api_status = m.get("status", "SCHEDULED")
             matches.append({
                 "external_id": str(m["id"]),
