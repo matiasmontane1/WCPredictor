@@ -179,6 +179,13 @@ export function useYesterdayMatches() {
   })
 }
 
+export function usePastMatches() {
+  return useQuery<MatchSummary[]>({
+    queryKey: ['matches', 'past'],
+    queryFn: () => api('/matches/past'),
+  })
+}
+
 // --- Results Hook ---
 export function useSubmitResult() {
   const qc = useQueryClient()

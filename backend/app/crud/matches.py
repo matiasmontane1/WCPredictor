@@ -43,6 +43,16 @@ async def get_yesterday_matches(db: AsyncSession) -> list[Match]:
     return list(result.scalars().all())
 
 
+async def get_past_matches(db: AsyncSession) -> list[Match]:
+    today = datetime.now(CHILE_TZ).date().isoformat()
+    result = await db.execute(
+        select(Match)
+        .where(Match.match_date < today)
+        .order_by(Match.match_date.desc(), Match.kickoff_time.desc())
+    )
+    return list(result.scalars().all())
+
+
 async def get_all_matches(db: AsyncSession) -> list[Match]:
     result = await db.execute(select(Match).order_by(Match.match_date, Match.kickoff_time))
     return list(result.scalars().all())
