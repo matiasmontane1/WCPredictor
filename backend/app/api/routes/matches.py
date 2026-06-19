@@ -14,6 +14,7 @@ from app.models.schemas import (
 )
 from app.services.engine.ensemble import ensemble_distribution
 from app.services.engine.ev import calculate_ev
+from app.services.engine.suggester import get_suggestions
 
 router = APIRouter(prefix="/matches", tags=["matches"])
 
@@ -139,6 +140,7 @@ async def get_match_detail(match_id: int, db: AsyncSession = Depends(get_db)):
     suggestions = await suggestions_crud.get_suggestions_for_match(db, match_id)
 
     score_distribution = []
+    fresh_suggestions = None
     if metrics and metrics.lambda_xg_home and metrics.lambda_market_home:
         weights = await get_weights(db)
         phase = await get_active_phase(db)
@@ -159,6 +161,16 @@ async def get_match_detail(match_id: int, db: AsyncSession = Depends(get_db)):
             for idx, it in enumerate(items[:15])
         ]
 
+        # Recompute suggestions fresh so EV matches the distribution
+        if suggestions:
+            raw = get_suggestions(ev_matrix, prob_matrix)
+            cons = raw["conservative"]
+            agg = raw["aggressive"]
+            fresh_suggestions = SuggestionPair(
+                conservative=SuggestionOut(score=cons["score"], probability=cons["probability"], ev=cons["ev"]),
+                aggressive=SuggestionOut(score=agg["score"], probability=agg["probability"], ev=agg["ev"]),
+            )
+
     return MatchDetailOut(
         id=match.id,
         home_team=match.home_team,
@@ -170,5 +182,5 @@ async def get_match_detail(match_id: int, db: AsyncSession = Depends(get_db)):
         actual_away_goals=match.actual_away_goals,
         metrics=MetricsOut.model_validate(metrics) if metrics else None,
         score_distribution=score_distribution,
-        suggestions=_build_suggestion_pair(suggestions) if suggestions else None,
+        suggestions=fresh_suggestions or (_build_suggestion_pair(suggestions) if suggestions else None),
     )
