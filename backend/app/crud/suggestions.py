@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.orm import Suggestion
 
 
-_ORM_FIELDS = {"score_home", "score_away", "probability", "ev", "suggestion_type"}
+_ORM_FIELDS = {"score_home", "score_away", "probability", "ev", "suggestion_type", "phase_id"}
 
 async def upsert_suggestions(db: AsyncSession, match_id: int, suggestions: list[dict]) -> None:
     await db.execute(delete(Suggestion).where(Suggestion.match_id == match_id))

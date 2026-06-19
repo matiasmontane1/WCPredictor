@@ -27,11 +27,13 @@ def _build_suggestion_pair(suggestions) -> SuggestionPair:
             score=f"{conservative.score_home}-{conservative.score_away}",
             probability=conservative.probability,
             ev=conservative.ev,
+            phase_id=conservative.phase_id,
         ) if conservative else None,
         aggressive=SuggestionOut(
             score=f"{aggressive.score_home}-{aggressive.score_away}",
             probability=aggressive.probability,
             ev=aggressive.ev,
+            phase_id=aggressive.phase_id,
         ) if aggressive else None,
     )
 
@@ -44,9 +46,10 @@ def _fresh_suggestion_pair(metrics, weights, phase) -> SuggestionPair | None:
     ev_matrix = calculate_ev(prob_matrix, phase) if phase else prob_matrix.copy()
     raw = get_suggestions(ev_matrix, prob_matrix)
     cons, agg = raw["conservative"], raw["aggressive"]
+    phase_id = phase.id if phase else None
     return SuggestionPair(
-        conservative=SuggestionOut(score=cons["score"], probability=cons["probability"], ev=cons["ev"]),
-        aggressive=SuggestionOut(score=agg["score"], probability=agg["probability"], ev=agg["ev"]),
+        conservative=SuggestionOut(score=cons["score"], probability=cons["probability"], ev=cons["ev"], phase_id=phase_id),
+        aggressive=SuggestionOut(score=agg["score"], probability=agg["probability"], ev=agg["ev"], phase_id=phase_id),
     )
 
 
@@ -167,9 +170,10 @@ async def get_match_detail(match_id: int, db: AsyncSession = Depends(get_db)):
         if suggestions:
             raw = get_suggestions(ev_matrix, prob_matrix)
             cons, agg = raw["conservative"], raw["aggressive"]
+            phase_id = phase.id if phase else None
             fresh_suggestions = SuggestionPair(
-                conservative=SuggestionOut(score=cons["score"], probability=cons["probability"], ev=cons["ev"]),
-                aggressive=SuggestionOut(score=agg["score"], probability=agg["probability"], ev=agg["ev"]),
+                conservative=SuggestionOut(score=cons["score"], probability=cons["probability"], ev=cons["ev"], phase_id=phase_id),
+                aggressive=SuggestionOut(score=agg["score"], probability=agg["probability"], ev=agg["ev"], phase_id=phase_id),
             )
 
     return MatchDetailOut(

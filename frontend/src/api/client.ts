@@ -34,6 +34,7 @@ export interface SuggestionOut {
   score: string
   probability: number
   ev: number
+  phase_id?: number
 }
 
 export interface MatchSummary {

@@ -58,6 +58,7 @@ class SuggestionOut(BaseModel):
     score: str
     probability: float
     ev: float
+    phase_id: Optional[int] = None
 
 
 class SuggestionPair(BaseModel):

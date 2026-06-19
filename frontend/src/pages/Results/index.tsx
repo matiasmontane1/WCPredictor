@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { usePastMatches, useSubmitResult, useActivePhase } from '../../api/client'
+import { usePastMatches, useSubmitResult, useActivePhase, usePhaseConfigs } from '../../api/client'
 import type { MatchSummary, PhaseConfig } from '../../api/client'
 
 function calcPoints(
@@ -35,6 +35,12 @@ export function Results() {
   const { data: matches, isLoading } = usePastMatches()
   const submitResult = useSubmitResult()
   const activePhase = useActivePhase()
+  const { data: phases } = usePhaseConfigs()
+
+  function phaseForId(phaseId?: number): PhaseConfig | null {
+    if (!phaseId || !phases) return activePhase
+    return phases.find((p) => p.id === phaseId) ?? activePhase
+  }
   const [editingId, setEditingId] = useState<number | null>(null)
   const [goals, setGoals] = useState<Record<number, { home: string; away: string }>>({})
 
@@ -72,10 +78,10 @@ export function Results() {
     const ah = m.actual_home_goals!
     const aa = m.actual_away_goals!
     if (m.suggestions?.conservative) {
-      totalCons += calcPoints(m.suggestions.conservative.score, ah, aa, activePhase).pts
+      totalCons += calcPoints(m.suggestions.conservative.score, ah, aa, phaseForId(m.suggestions.conservative.phase_id)).pts
     }
     if (m.suggestions?.aggressive) {
-      totalAgg += calcPoints(m.suggestions.aggressive.score, ah, aa, activePhase).pts
+      totalAgg += calcPoints(m.suggestions.aggressive.score, ah, aa, phaseForId(m.suggestions.aggressive.phase_id)).pts
       countedMatches++
     }
   }
@@ -140,8 +146,8 @@ export function Results() {
                   const aa = match.actual_away_goals!
                   const cons = match.suggestions?.conservative
                   const agg = match.suggestions?.aggressive
-                  const consPoints = saved && cons ? calcPoints(cons.score, ah, aa, activePhase) : null
-                  const aggPoints = saved && agg ? calcPoints(agg.score, ah, aa, activePhase) : null
+                  const consPoints = saved && cons ? calcPoints(cons.score, ah, aa, phaseForId(cons.phase_id)) : null
+                  const aggPoints = saved && agg ? calcPoints(agg.score, ah, aa, phaseForId(agg.phase_id)) : null
 
                   return (
                     <div key={match.id} className="bg-slate-800 rounded-xl p-4 space-y-3">

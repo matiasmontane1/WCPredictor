@@ -75,6 +75,7 @@ class Suggestion(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     match_id: Mapped[int] = mapped_column(Integer, ForeignKey("matches.id"), nullable=False)
+    phase_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("phase_config.id"), nullable=True)
     score_home: Mapped[int] = mapped_column(Integer, nullable=False)
     score_away: Mapped[int] = mapped_column(Integer, nullable=False)
     probability: Mapped[float] = mapped_column(Float, nullable=False)

@@ -186,6 +186,8 @@ async def run_daily_sync(db: AsyncSession, job_id: str) -> None:
 
             result = get_suggestions(ev_matrix, prob_matrix)
             sugg_list = [result["conservative"], result["aggressive"]]
+            for s in sugg_list:
+                s["phase_id"] = phase.id if phase else None
             await suggestions_crud.upsert_suggestions(db, match.id, sugg_list)
 
         job_status[job_id].update({
