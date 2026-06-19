@@ -9,6 +9,7 @@ async def create_phase(db: AsyncSession, data: PhaseConfigCreate) -> PhaseConfig
     phase = PhaseConfig(
         phase_name=data.phase_name,
         points_winner=data.points_winner,
+        points_goal_diff=data.points_goal_diff,
         points_exact_score=data.points_exact_score,
         is_active=False,
     )
@@ -36,6 +37,27 @@ async def get_active_phase(db: AsyncSession) -> PhaseConfig | None:
 async def set_active_phase(db: AsyncSession, phase_id: int) -> PhaseConfig:
     await db.execute(update(PhaseConfig).values(is_active=False))
     await db.execute(update(PhaseConfig).where(PhaseConfig.id == phase_id).values(is_active=True))
+    await db.commit()
+    result = await db.execute(select(PhaseConfig).where(PhaseConfig.id == phase_id))
+    return result.scalar_one()
+
+
+async def deactivate_phase(db: AsyncSession, phase_id: int) -> PhaseConfig:
+    await db.execute(update(PhaseConfig).where(PhaseConfig.id == phase_id).values(is_active=False))
+    await db.commit()
+    result = await db.execute(select(PhaseConfig).where(PhaseConfig.id == phase_id))
+    return result.scalar_one()
+
+
+async def update_phase(db: AsyncSession, phase_id: int, data: PhaseConfigCreate) -> PhaseConfig:
+    await db.execute(
+        update(PhaseConfig).where(PhaseConfig.id == phase_id).values(
+            phase_name=data.phase_name,
+            points_winner=data.points_winner,
+            points_goal_diff=data.points_goal_diff,
+            points_exact_score=data.points_exact_score,
+        )
+    )
     await db.commit()
     result = await db.execute(select(PhaseConfig).where(PhaseConfig.id == phase_id))
     return result.scalar_one()

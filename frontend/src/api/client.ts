@@ -121,6 +121,27 @@ export function useActivatePhase() {
   })
 }
 
+export function useDeactivatePhase() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) =>
+      api<PhaseConfig>(`/config/phase/${id}/deactivate`, { method: 'PUT' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['phases'] })
+      qc.invalidateQueries({ queryKey: ['matches'] })
+    },
+  })
+}
+
+export function useUpdatePhase() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: { phase_name: string; points_winner: number; points_goal_diff: number; points_exact_score: number } }) =>
+      api<PhaseConfig>(`/config/phase/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['phases'] }),
+  })
+}
+
 export function useDeletePhase() {
   const qc = useQueryClient()
   return useMutation({

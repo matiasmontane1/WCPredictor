@@ -5,6 +5,7 @@ from app.core.database import get_db
 from app.crud import phase_config as crud
 from app.models.schemas import PhaseConfigCreate, PhaseConfigOut
 
+
 router = APIRouter(prefix="/config", tags=["config"])
 
 
@@ -24,6 +25,22 @@ async def activate_phase(phase_id: int, db: AsyncSession = Depends(get_db)):
     if phase is None:
         raise HTTPException(status_code=404, detail="Phase config not found")
     return await crud.set_active_phase(db, phase_id)
+
+
+@router.put("/phase/{phase_id}", response_model=PhaseConfigOut)
+async def update_phase(phase_id: int, data: PhaseConfigCreate, db: AsyncSession = Depends(get_db)):
+    phase = await crud.get_phase(db, phase_id)
+    if phase is None:
+        raise HTTPException(status_code=404, detail="Phase config not found")
+    return await crud.update_phase(db, phase_id, data)
+
+
+@router.put("/phase/{phase_id}/deactivate", response_model=PhaseConfigOut)
+async def deactivate_phase(phase_id: int, db: AsyncSession = Depends(get_db)):
+    phase = await crud.get_phase(db, phase_id)
+    if phase is None:
+        raise HTTPException(status_code=404, detail="Phase config not found")
+    return await crud.deactivate_phase(db, phase_id)
 
 
 @router.delete("/phase/{phase_id}", status_code=204)
