@@ -83,15 +83,27 @@ async def get_today_matches(db: AsyncSession = Depends(get_db)):
 @router.get("/past", response_model=list[MatchSummary])
 async def get_past_matches(db: AsyncSession = Depends(get_db)):
     matches = await matches_crud.get_past_matches(db)
-    weights = await get_weights(db)
-    phase = await get_active_phase(db)
     result = []
     for match in matches:
         suggestions = await suggestions_crud.get_suggestions_for_match(db, match.id)
         if not suggestions:
             continue
+        # Use stored suggestions (locked at last sync before kickoff) — never recompute for past matches
+        stored_pair = _build_suggestion_pair(suggestions)
         metrics = await metrics_crud.get_metrics_for_match(db, match.id)
-        result.append(_build_summary(match, suggestions, metrics, weights, phase))
+        result.append(MatchSummary(
+            id=match.id,
+            match_date=match.match_date,
+            kickoff_time=match.kickoff_time,
+            home_team=match.home_team,
+            away_team=match.away_team,
+            phase=match.phase,
+            status=match.status,
+            actual_home_goals=match.actual_home_goals,
+            actual_away_goals=match.actual_away_goals,
+            suggestions=stored_pair,
+            has_metrics=metrics is not None,
+        ))
     return result
 
 

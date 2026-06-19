@@ -139,6 +139,11 @@ async def run_daily_sync(db: AsyncSession, job_id: str) -> None:
         weights = await get_weights(db)
 
         for match in match_objects:
+            # Never overwrite suggestions once the match has kicked off
+            if match.status not in ("TIMED", "SCHEDULED"):
+                logger.info(f"[{job_id}] Skipping suggestions for {match.home_team} vs {match.away_team} (status={match.status})")
+                continue
+
             metrics = await metrics_crud.get_metrics_for_match(db, match.id)
             if metrics is None:
                 continue
