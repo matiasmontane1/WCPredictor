@@ -1,4 +1,4 @@
-from sqlalchemy import select, func
+from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.orm import PredictionLog
@@ -27,3 +27,8 @@ async def get_log_for_match(db: AsyncSession, match_id: int) -> PredictionLog | 
         select(PredictionLog).where(PredictionLog.match_id == match_id)
     )
     return result.scalar_one_or_none()
+
+
+async def delete_log_for_match(db: AsyncSession, match_id: int) -> None:
+    await db.execute(delete(PredictionLog).where(PredictionLog.match_id == match_id))
+    await db.commit()

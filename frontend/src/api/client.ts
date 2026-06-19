@@ -167,6 +167,13 @@ export function useMatchDetail(matchId: number) {
   })
 }
 
+export function useYesterdayMatches() {
+  return useQuery<MatchSummary[]>({
+    queryKey: ['matches', 'yesterday'],
+    queryFn: () => api('/matches/yesterday'),
+  })
+}
+
 // --- Results Hook ---
 export function useSubmitResult() {
   const qc = useQueryClient()

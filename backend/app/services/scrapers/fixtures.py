@@ -1,5 +1,6 @@
 import logging
-from datetime import date
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import httpx
 
@@ -8,10 +9,15 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 BASE_URL = "https://api.football-data.org/v4"
+CHILE_TZ = ZoneInfo("America/Santiago")
+
+
+def _today_chile() -> str:
+    return datetime.now(CHILE_TZ).date().isoformat()
 
 
 async def get_today_matches() -> list[dict]:
-    today = date.today().isoformat()
+    today = _today_chile()
     url = f"{BASE_URL}/competitions/WC/matches"
     headers = {"X-Auth-Token": settings.FOOTBALL_DATA_API_KEY}
     params = {"dateFrom": today, "dateTo": today}
@@ -34,7 +40,7 @@ async def get_today_matches() -> list[dict]:
         for m in data.get("matches", []):
             matches.append({
                 "external_id": str(m["id"]),
-                "match_date": today,
+                "match_date": m.get("utcDate", "")[:10] or today,
                 "kickoff_time": m.get("utcDate"),
                 "home_team": m["homeTeam"]["name"],
                 "away_team": m["awayTeam"]["name"],
