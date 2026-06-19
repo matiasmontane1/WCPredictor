@@ -64,6 +64,8 @@ async def get_past_matches(db: AsyncSession = Depends(get_db)):
     result = []
     for match in matches:
         suggestions = await suggestions_crud.get_suggestions_for_match(db, match.id)
+        if not suggestions:
+            continue
         metrics = await metrics_crud.get_metrics_for_match(db, match.id)
         result.append(MatchSummary(
             id=match.id,
@@ -75,7 +77,7 @@ async def get_past_matches(db: AsyncSession = Depends(get_db)):
             status=match.status,
             actual_home_goals=match.actual_home_goals,
             actual_away_goals=match.actual_away_goals,
-            suggestions=_build_suggestion_pair(suggestions) if suggestions else None,
+            suggestions=_build_suggestion_pair(suggestions),
             has_metrics=metrics is not None,
         ))
     return result
