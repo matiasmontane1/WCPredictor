@@ -30,7 +30,9 @@ async def upsert_match(db: AsyncSession, match_data: dict) -> Match:
 async def get_today_matches(db: AsyncSession) -> list[Match]:
     today = datetime.now(CHILE_TZ).date().isoformat()
     result = await db.execute(
-        select(Match).where(Match.match_date == today).order_by(Match.kickoff_time)
+        select(Match)
+        .where(Match.match_date == today, Match.status != "FINISHED")
+        .order_by(Match.kickoff_time)
     )
     return list(result.scalars().all())
 
@@ -48,7 +50,7 @@ async def get_past_matches(db: AsyncSession) -> list[Match]:
     result = await db.execute(
         select(Match)
         .where(
-            or_(Match.match_date < today, Match.actual_home_goals.is_not(None))
+            or_(Match.match_date < today, Match.status == "FINISHED")
         )
         .order_by(Match.match_date.desc(), Match.kickoff_time.desc())
     )
@@ -71,7 +73,7 @@ async def set_match_result(db: AsyncSession, match_id: int, home_goals: int, awa
         raise ValueError("Match not found")
     match.actual_home_goals = home_goals
     match.actual_away_goals = away_goals
-    match.status = "finished"
+    match.status = "FINISHED"
     await db.commit()
     await db.refresh(match)
     return match
