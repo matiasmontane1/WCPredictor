@@ -32,3 +32,9 @@ async def get_log_for_match(db: AsyncSession, match_id: int) -> PredictionLog | 
 async def delete_log_for_match(db: AsyncSession, match_id: int) -> None:
     await db.execute(delete(PredictionLog).where(PredictionLog.match_id == match_id))
     await db.commit()
+
+
+async def delete_all_logs(db: AsyncSession) -> int:
+    result = await db.execute(delete(PredictionLog))
+    await db.commit()
+    return result.rowcount

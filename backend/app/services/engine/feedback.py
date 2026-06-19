@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud import prediction_log as log_crud
 from app.crud import weights as weights_crud
 from app.crud.metrics import get_metrics_for_match
+from app.crud.suggestions import get_suggestions_for_match
 from app.services.engine.poisson import score_probability
 
 MIN_MATCHES_FOR_UPDATE = 5
@@ -21,6 +22,11 @@ def compute_brier_score(prob_matrix: np.ndarray, actual_home: int, actual_away: 
 
 
 async def update_weights(db: AsyncSession, match_id: int) -> dict:
+    # Only evaluate matches that had predictions generated before kickoff
+    suggestions = await get_suggestions_for_match(db, match_id)
+    if not suggestions:
+        return {}
+
     metrics = await get_metrics_for_match(db, match_id)
     if metrics is None:
         return {}
@@ -47,6 +53,10 @@ async def update_weights(db: AsyncSession, match_id: int) -> dict:
     bs_a = compute_brier_score(matrix_a, match.actual_home_goals, match.actual_away_goals)
     bs_b = compute_brier_score(matrix_b, match.actual_home_goals, match.actual_away_goals)
 
+    # Use actual log count to self-heal any counter drift
+    actual_log_count = await log_crud.get_log_count(db)
+    new_count = actual_log_count + 1
+
     log_data = {
         "match_id": match_id,
         "actual_home_goals": match.actual_home_goals,
@@ -60,7 +70,6 @@ async def update_weights(db: AsyncSession, match_id: int) -> dict:
         "evaluated_at": datetime.utcnow(),
     }
 
-    new_count = weights.matches_evaluated + 1
     new_w_xg = weights.weight_xg
     new_w_mkt = weights.weight_market
 

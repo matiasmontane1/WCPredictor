@@ -214,3 +214,11 @@ export function useModelWeights() {
     queryFn: () => api('/weights'),
   })
 }
+
+export function useResetWeights() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api<ModelWeights>('/weights/reset', { method: 'POST', body: '{}' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['weights'] }),
+  })
+}
