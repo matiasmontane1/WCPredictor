@@ -45,12 +45,12 @@ export interface MatchSummary {
   phase?: string
   status: string
   has_metrics: boolean
+  actual_home_goals?: number | null
+  actual_away_goals?: number | null
   suggestions?: {
     conservative?: SuggestionOut
     aggressive?: SuggestionOut
   }
-  actual_home_goals?: number
-  actual_away_goals?: number
 }
 
 export interface ScoreDistributionItem {
@@ -93,6 +93,11 @@ export function usePhaseConfigs() {
     queryKey: ['phases'],
     queryFn: () => api('/config/phase'),
   })
+}
+
+export function useActivePhase() {
+  const { data: phases } = usePhaseConfigs()
+  return phases?.find((p) => p.is_active) ?? null
 }
 
 export function useCreatePhase() {

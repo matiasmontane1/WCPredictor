@@ -50,6 +50,8 @@ async def get_today_matches(db: AsyncSession = Depends(get_db)):
             away_team=match.away_team,
             phase=match.phase,
             status=match.status,
+            actual_home_goals=match.actual_home_goals,
+            actual_away_goals=match.actual_away_goals,
             suggestions=_build_suggestion_pair(suggestions) if suggestions else None,
             has_metrics=metrics is not None,
         ))

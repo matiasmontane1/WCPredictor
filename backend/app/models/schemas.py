@@ -87,6 +87,8 @@ class MatchSummary(BaseModel):
     away_team: str
     phase: Optional[str] = None
     status: str
+    actual_home_goals: Optional[int] = None
+    actual_away_goals: Optional[int] = None
     suggestions: Optional[SuggestionPair] = None
     has_metrics: bool = False
 
