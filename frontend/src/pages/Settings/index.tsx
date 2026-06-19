@@ -31,7 +31,7 @@ export function Settings() {
                 )}
               </div>
               <div className="text-slate-400 text-xs mt-1">
-                Ganador: {phase.points_winner} pt{phase.points_winner !== 1 ? 's' : ''} · Exacto: {phase.points_exact_score} pt{phase.points_exact_score !== 1 ? 's' : ''}
+                Ganador: {phase.points_winner} · Dif: {phase.points_goal_diff} · Exacto: {phase.points_exact_score} pts
               </div>
             </div>
             <div className="flex gap-2">
