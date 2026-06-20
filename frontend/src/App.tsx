@@ -8,6 +8,7 @@ import { Settings } from './pages/Settings'
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })))
 const MatchDetail = lazy(() => import('./pages/MatchDetail').then((m) => ({ default: m.MatchDetail })))
 const Results = lazy(() => import('./pages/Results').then((m) => ({ default: m.Results })))
+const Stats = lazy(() => import('./pages/Stats').then((m) => ({ default: m.Stats })))
 
 function PageLoader() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/match/:id" element={<MatchDetail />} />
               <Route path="/results" element={<Results />} />
+              <Route path="/stats" element={<Stats />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </Suspense>

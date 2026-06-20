@@ -229,6 +229,34 @@ export function useValidateScore() {
   })
 }
 
+// --- WC Stats Hook ---
+export interface ScorelineItem {
+  score: string
+  count: number
+  pct: number
+}
+
+export interface TotalGoalsItem {
+  goals: number
+  count: number
+  pct: number
+}
+
+export interface WCStats {
+  total_matches: number
+  top_scorelines: ScorelineItem[]
+  margin_distribution: Record<string, number>
+  total_goals_distribution: TotalGoalsItem[]
+  btts_percentage: number
+}
+
+export function useWCStats() {
+  return useQuery<WCStats>({
+    queryKey: ['stats', 'wc'],
+    queryFn: () => api('/stats/wc'),
+  })
+}
+
 // --- Weights Hook ---
 export function useModelWeights() {
   return useQuery<ModelWeights>({

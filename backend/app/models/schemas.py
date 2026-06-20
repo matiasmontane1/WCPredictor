@@ -190,6 +190,28 @@ class ModelWeightsOut(BaseModel):
         return str(v)
 
 
+# --- WC Stats ---
+
+class ScorelineItem(BaseModel):
+    score: str
+    count: int
+    pct: float
+
+
+class TotalGoalsItem(BaseModel):
+    goals: int
+    count: int
+    pct: float
+
+
+class WCStatsOut(BaseModel):
+    total_matches: int
+    top_scorelines: list[ScorelineItem]
+    margin_distribution: dict[str, float]
+    total_goals_distribution: list[TotalGoalsItem]
+    btts_percentage: float
+
+
 # --- Health ---
 
 class HealthOut(BaseModel):
