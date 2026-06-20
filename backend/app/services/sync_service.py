@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,14 +12,12 @@ from app.crud import matches as matches_crud
 from app.crud import metrics as metrics_crud
 from app.crud import suggestions as suggestions_crud
 from app.crud import prediction_log as log_crud
-from app.crud import team_stats as team_stats_crud
 from app.crud.phase_config import get_active_phase
 from app.crud.weights import get_weights
 from app.services.engine import feedback as feedback_engine
 from app.services.scrapers import fixtures as fixtures_scraper
 from app.services.scrapers import odds as odds_scraper
 from app.services.scrapers import xg as xg_scraper
-from app.services.scrapers import team_stats as team_stats_scraper
 from app.services.engine.calibrator import solve_lambdas
 from app.services.engine.ensemble import ensemble_distribution
 from app.services.engine.ev import calculate_ev
@@ -192,33 +190,6 @@ async def run_daily_sync(db: AsyncSession, job_id: str) -> None:
                 s["phase_id"] = phase.id if phase else None
             await suggestions_crud.upsert_suggestions(db, match.id, sugg_list)
 
-        # Step 5: Fetch team stats from FBref (sync scraper → thread executor)
-        logger.info(f"[{job_id}] Fetching team stats from FBref...")
-        stale_cutoff = datetime.utcnow() - timedelta(hours=20)
-        seen_teams: set[str] = set()
-        teams_fetched = 0
-        for match in match_objects:
-            for team_name, team_ext_id in [
-                (match.home_team, match.home_team_ext_id),
-                (match.away_team, match.away_team_ext_id),
-            ]:
-                if team_name in seen_teams:
-                    continue
-                seen_teams.add(team_name)
-                existing = await team_stats_crud.get_team_stats(db, team_name)
-                if existing and existing.scraped_at > stale_cutoff:
-                    logger.info(f"[{job_id}] Skipping {team_name} stats (fresh)")
-                    continue
-                stats = await loop.run_in_executor(
-                    _executor, team_stats_scraper.get_team_stats, team_name
-                )
-                if stats:
-                    await team_stats_crud.upsert_team_stats(db, team_name, team_ext_id or "", stats)
-                    teams_fetched += 1
-                    logger.info(f"[{job_id}] Stats fetched for {team_name}: {stats['sample_size']} matches")
-                else:
-                    logger.warning(f"[{job_id}] No stats found for {team_name}")
-        logger.info(f"[{job_id}] Team stats done ({teams_fetched} updated)")
 
         job_status[job_id].update({
             "status": "completed",

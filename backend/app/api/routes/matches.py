@@ -6,12 +6,11 @@ from app.core.database import get_db
 from app.crud import matches as matches_crud
 from app.crud import metrics as metrics_crud
 from app.crud import suggestions as suggestions_crud
-from app.crud import team_stats as team_stats_crud
 from app.crud.phase_config import get_active_phase
 from app.crud.weights import get_weights
 from app.models.schemas import (
     MatchDetailOut, MatchSummary, MetricsOut,
-    ScoreDistributionItem, SuggestionOut, SuggestionPair, TeamStatsOut,
+    ScoreDistributionItem, SuggestionOut, SuggestionPair,
 )
 from app.services.engine.ensemble import ensemble_distribution
 from app.services.engine.ev import calculate_ev
@@ -177,21 +176,6 @@ async def get_match_detail(match_id: int, db: AsyncSession = Depends(get_db)):
                 aggressive=SuggestionOut(score=agg["score"], probability=agg["probability"], ev=agg["ev"], phase_id=phase_id),
             )
 
-    home_stats_orm = await team_stats_crud.get_team_stats(db, match.home_team)
-    away_stats_orm = await team_stats_crud.get_team_stats(db, match.away_team)
-
-    def _to_stats_out(s) -> TeamStatsOut | None:
-        if s is None:
-            return None
-        return TeamStatsOut(
-            sample_size=s.sample_size,
-            avg_goals_scored=s.avg_goals_scored,
-            avg_goals_conceded=s.avg_goals_conceded,
-            clean_sheet_pct=s.clean_sheet_pct,
-            most_common_result=s.most_common_result,
-            form=s.form,
-        )
-
     return MatchDetailOut(
         id=match.id,
         home_team=match.home_team,
@@ -204,6 +188,4 @@ async def get_match_detail(match_id: int, db: AsyncSession = Depends(get_db)):
         metrics=MetricsOut.model_validate(metrics) if metrics else None,
         score_distribution=score_distribution,
         suggestions=fresh_suggestions or (_build_suggestion_pair(suggestions) if suggestions else None),
-        home_stats=_to_stats_out(home_stats_orm),
-        away_stats=_to_stats_out(away_stats_orm),
     )
