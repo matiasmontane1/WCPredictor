@@ -17,10 +17,17 @@ def _today_chile() -> str:
 
 
 def _utc_str_to_chile_date(utc_str: str) -> str:
-    """Convert '2026-06-19T01:00:00Z' to Chile local date."""
+    """Convert '2026-06-19T01:00:00Z' to Chile local date.
+
+    Matches kicking off between 00:00 and 01:59 Chile time are assigned
+    to the previous day so suggestions are visible before midnight.
+    """
     try:
         dt = datetime.fromisoformat(utc_str.replace("Z", "+00:00"))
-        return dt.astimezone(CHILE_TZ).date().isoformat()
+        chile_dt = dt.astimezone(CHILE_TZ)
+        if chile_dt.hour < 2:
+            return (chile_dt.date() - timedelta(days=1)).isoformat()
+        return chile_dt.date().isoformat()
     except Exception:
         return _today_chile()
 
