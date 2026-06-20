@@ -192,8 +192,8 @@ async def run_daily_sync(db: AsyncSession, job_id: str) -> None:
                 s["phase_id"] = phase.id if phase else None
             await suggestions_crud.upsert_suggestions(db, match.id, sugg_list)
 
-        # Step 5: Fetch team stats (cached 20h, respect rate limit with delay)
-        logger.info(f"[{job_id}] Fetching team stats...")
+        # Step 5: Fetch team stats from FBref (sync scraper → thread executor)
+        logger.info(f"[{job_id}] Fetching team stats from FBref...")
         stale_cutoff = datetime.utcnow() - timedelta(hours=20)
         seen_teams: set[str] = set()
         teams_fetched = 0
@@ -202,18 +202,22 @@ async def run_daily_sync(db: AsyncSession, job_id: str) -> None:
                 (match.home_team, match.home_team_ext_id),
                 (match.away_team, match.away_team_ext_id),
             ]:
-                if not team_ext_id or team_name in seen_teams:
+                if team_name in seen_teams:
                     continue
                 seen_teams.add(team_name)
                 existing = await team_stats_crud.get_team_stats(db, team_name)
                 if existing and existing.scraped_at > stale_cutoff:
+                    logger.info(f"[{job_id}] Skipping {team_name} stats (fresh)")
                     continue
-                await asyncio.sleep(6)  # stay under 10 req/min
-                stats = await team_stats_scraper.fetch_team_stats(team_ext_id)
+                stats = await loop.run_in_executor(
+                    _executor, team_stats_scraper.get_team_stats, team_name
+                )
                 if stats:
-                    await team_stats_crud.upsert_team_stats(db, team_name, team_ext_id, stats)
+                    await team_stats_crud.upsert_team_stats(db, team_name, team_ext_id or "", stats)
                     teams_fetched += 1
-                    logger.info(f"[{job_id}] Stats fetched for {team_name}")
+                    logger.info(f"[{job_id}] Stats fetched for {team_name}: {stats['sample_size']} matches")
+                else:
+                    logger.warning(f"[{job_id}] No stats found for {team_name}")
         logger.info(f"[{job_id}] Team stats done ({teams_fetched} updated)")
 
         job_status[job_id].update({
