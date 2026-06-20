@@ -58,6 +58,10 @@ async def get_today_matches() -> list[dict]:
         data = resp.json()
         matches = []
         for m in data.get("matches", []):
+            home = m.get("homeTeam", {}).get("name")
+            away = m.get("awayTeam", {}).get("name")
+            if not home or not away:
+                continue  # knockout placeholder — teams not yet determined
             utc_date = m.get("utcDate", "")
             chile_date = _utc_str_to_chile_date(utc_date) if utc_date else today_str
             api_status = m.get("status", "SCHEDULED")
@@ -65,8 +69,8 @@ async def get_today_matches() -> list[dict]:
                 "external_id": str(m["id"]),
                 "match_date": chile_date,
                 "kickoff_time": utc_date,
-                "home_team": m["homeTeam"]["name"],
-                "away_team": m["awayTeam"]["name"],
+                "home_team": home,
+                "away_team": away,
                 "phase": m.get("stage"),
                 "status": api_status,
             }
@@ -103,6 +107,10 @@ async def get_all_wc_matches() -> list[dict]:
         data = resp.json()
         matches = []
         for m in data.get("matches", []):
+            home = m.get("homeTeam", {}).get("name")
+            away = m.get("awayTeam", {}).get("name")
+            if not home or not away:
+                continue  # knockout placeholder — teams not yet determined
             utc_date = m.get("utcDate", "")
             chile_date = _utc_str_to_chile_date(utc_date) if utc_date else today
             api_status = m.get("status", "SCHEDULED")
@@ -110,8 +118,8 @@ async def get_all_wc_matches() -> list[dict]:
                 "external_id": str(m["id"]),
                 "match_date": chile_date,
                 "kickoff_time": utc_date,
-                "home_team": m["homeTeam"]["name"],
-                "away_team": m["awayTeam"]["name"],
+                "home_team": home,
+                "away_team": away,
                 "phase": m.get("stage"),
                 "status": api_status,
             }
