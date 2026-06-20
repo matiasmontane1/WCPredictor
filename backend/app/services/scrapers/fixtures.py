@@ -80,6 +80,8 @@ async def get_today_matches() -> list[dict]:
                 "away_team": away,
                 "phase": m.get("stage"),
                 "status": api_status,
+                "home_team_ext_id": str(m["homeTeam"]["id"]),
+                "away_team_ext_id": str(m["awayTeam"]["id"]),
             }
             if api_status == "FINISHED":
                 ft = m.get("score", {}).get("fullTime", {})
@@ -129,6 +131,8 @@ async def get_all_wc_matches() -> list[dict]:
                 "away_team": away,
                 "phase": m.get("stage"),
                 "status": api_status,
+                "home_team_ext_id": str(m["homeTeam"]["id"]),
+                "away_team_ext_id": str(m["awayTeam"]["id"]),
             }
             if api_status == "FINISHED":
                 ft = m.get("score", {}).get("fullTime", {})

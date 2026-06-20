@@ -1,7 +1,48 @@
 import { useParams, Link } from 'react-router-dom'
 import { useMatchDetail } from '../../api/client'
+import type { TeamStats } from '../../api/client'
 import { SuggestionPanel } from '../../components/SuggestionPanel'
 import { IntuitionValidator } from '../../components/IntuitionValidator'
+import { getFlag } from '../../utils/flags'
+
+function FormBadge({ result }: { result: string }) {
+  const color = result === 'W' ? 'bg-green-500' : result === 'D' ? 'bg-yellow-500' : 'bg-red-500'
+  return <span className={`${color} text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full`}>{result}</span>
+}
+
+function TeamStatsCard({ name, stats }: { name: string; stats: TeamStats }) {
+  const form = stats.form.split(',').filter(Boolean)
+  return (
+    <div className="flex-1 space-y-2">
+      <div className="text-center">
+        <div className="text-2xl mb-1">{getFlag(name)}</div>
+        <div className="text-white font-semibold text-sm">{name}</div>
+        <div className="text-slate-500 text-xs">últimos {stats.sample_size} partidos</div>
+      </div>
+      <div className="grid grid-cols-2 gap-1 text-xs">
+        <div className="bg-slate-700 rounded-lg p-2 text-center">
+          <div className="text-slate-400">Goles/partido</div>
+          <div className="text-green-400 font-bold">{stats.avg_goals_scored.toFixed(1)}</div>
+        </div>
+        <div className="bg-slate-700 rounded-lg p-2 text-center">
+          <div className="text-slate-400">Recibe/partido</div>
+          <div className="text-red-400 font-bold">{stats.avg_goals_conceded.toFixed(1)}</div>
+        </div>
+        <div className="bg-slate-700 rounded-lg p-2 text-center">
+          <div className="text-slate-400">Clean sheets</div>
+          <div className="text-blue-400 font-bold">{(stats.clean_sheet_pct * 100).toFixed(0)}%</div>
+        </div>
+        <div className="bg-slate-700 rounded-lg p-2 text-center">
+          <div className="text-slate-400">Resultado más común</div>
+          <div className="text-white font-bold">{stats.most_common_result}</div>
+        </div>
+      </div>
+      <div className="flex gap-1 justify-center">
+        {form.map((r, i) => <FormBadge key={i} result={r} />)}
+      </div>
+    </div>
+  )
+}
 
 export function MatchDetail() {
   const { id } = useParams<{ id: string }>()
@@ -59,6 +100,17 @@ export function MatchDetail() {
           </div>
         )}
       </div>
+
+      {(match.home_stats || match.away_stats) && (
+        <div className="bg-slate-800 rounded-xl p-4">
+          <h3 className="text-slate-300 font-semibold text-sm mb-3 text-center">Estadísticas recientes</h3>
+          <div className="flex gap-4">
+            {match.home_stats && <TeamStatsCard name={match.home_team} stats={match.home_stats} />}
+            {match.home_stats && match.away_stats && <div className="w-px bg-slate-700" />}
+            {match.away_stats && <TeamStatsCard name={match.away_team} stats={match.away_stats} />}
+          </div>
+        </div>
+      )}
 
       {match.suggestions?.conservative || match.suggestions?.aggressive ? (
         <SuggestionPanel

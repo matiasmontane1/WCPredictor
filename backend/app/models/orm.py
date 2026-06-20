@@ -29,6 +29,8 @@ class Match(Base):
     status: Mapped[str] = mapped_column(String(20), default="scheduled")
     actual_home_goals: Mapped[int | None] = mapped_column(Integer, nullable=True)
     actual_away_goals: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    home_team_ext_id: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    away_team_ext_id: Mapped[str | None] = mapped_column(String(20), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     metrics: Mapped["ScrapedMetrics | None"] = relationship("ScrapedMetrics", back_populates="match", uselist=False)
@@ -102,3 +104,18 @@ class PredictionLog(Base):
     evaluated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     match: Mapped["Match"] = relationship("Match", back_populates="prediction_log")
+
+
+class TeamStats(Base):
+    __tablename__ = "team_stats"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    team_name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    team_ext_id: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    sample_size: Mapped[int] = mapped_column(Integer, default=0)
+    avg_goals_scored: Mapped[float | None] = mapped_column(Float, nullable=True)
+    avg_goals_conceded: Mapped[float | None] = mapped_column(Float, nullable=True)
+    clean_sheet_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    most_common_result: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    form: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    scraped_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

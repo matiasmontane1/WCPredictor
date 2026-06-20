@@ -61,6 +61,15 @@ export interface ScoreDistributionItem {
   rank: number
 }
 
+export interface TeamStats {
+  sample_size: number
+  avg_goals_scored: number
+  avg_goals_conceded: number
+  clean_sheet_pct: number
+  most_common_result: string
+  form: string
+}
+
 export interface MatchDetail extends MatchSummary {
   metrics?: {
     xg_home?: number
@@ -70,6 +79,8 @@ export interface MatchDetail extends MatchSummary {
     implied_prob_away?: number
   }
   score_distribution: ScoreDistributionItem[]
+  home_stats?: TeamStats
+  away_stats?: TeamStats
 }
 
 export interface ModelWeights {

@@ -94,6 +94,15 @@ class MatchSummary(BaseModel):
     has_metrics: bool = False
 
 
+class TeamStatsOut(BaseModel):
+    sample_size: int
+    avg_goals_scored: float
+    avg_goals_conceded: float
+    clean_sheet_pct: float
+    most_common_result: str
+    form: str
+
+
 class MatchDetailOut(BaseModel):
     model_config = {"from_attributes": True}
     id: int
@@ -107,6 +116,8 @@ class MatchDetailOut(BaseModel):
     metrics: Optional[MetricsOut] = None
     score_distribution: list[ScoreDistributionItem] = []
     suggestions: Optional[SuggestionPair] = None
+    home_stats: Optional[TeamStatsOut] = None
+    away_stats: Optional[TeamStatsOut] = None
 
 
 # --- Sync ---
