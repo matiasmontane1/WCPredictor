@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.models.orm import Match
-from app.models.schemas import ScorelineItem, TotalGoalsItem, WCStatsOut
+from app.models.schemas import LastMatchItem, ScorelineItem, TotalGoalsItem, WCStatsOut
 
 router = APIRouter(prefix="/stats", tags=["stats"])
 
@@ -16,6 +16,7 @@ _EMPTY = WCStatsOut(
     margin_distribution={"draw": 0.0, "one_goal": 0.0, "two_goals": 0.0, "three_plus": 0.0},
     total_goals_distribution=[],
     btts_percentage=0.0,
+    last_match=None,
 )
 
 
@@ -71,10 +72,21 @@ async def get_wc_stats(db: AsyncSession = Depends(get_db)):
         for g in range(max_g + 1)
     ]
 
+    # Last match: most recently kicked off finished match
+    finished_with_time = [m for m in matches if m.kickoff_time]
+    last = max(finished_with_time, key=lambda m: m.kickoff_time, default=None) if finished_with_time else (matches[-1] if matches else None)
+    last_match = LastMatchItem(
+        home_team=last.home_team,
+        away_team=last.away_team,
+        score=f"{last.actual_home_goals}-{last.actual_away_goals}",
+        kickoff_time=last.kickoff_time,
+    ) if last else None
+
     return WCStatsOut(
         total_matches=total,
         top_scorelines=top_scorelines,
         margin_distribution=margin_distribution,
         total_goals_distribution=total_goals_distribution,
         btts_percentage=round(btts / total * 100, 1),
+        last_match=last_match,
     )

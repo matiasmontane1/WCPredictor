@@ -204,12 +204,20 @@ class TotalGoalsItem(BaseModel):
     pct: float
 
 
+class LastMatchItem(BaseModel):
+    home_team: str
+    away_team: str
+    score: str
+    kickoff_time: Optional[str] = None
+
+
 class WCStatsOut(BaseModel):
     total_matches: int
     top_scorelines: list[ScorelineItem]
     margin_distribution: dict[str, float]
     total_goals_distribution: list[TotalGoalsItem]
     btts_percentage: float
+    last_match: Optional[LastMatchItem] = None
 
 
 # --- Health ---

@@ -49,6 +49,25 @@ export function Stats() {
         <div className="text-slate-400 text-sm">partidos jugados</div>
       </div>
 
+      {/* Último partido integrado */}
+      {data.last_match && (
+        <div className="bg-slate-800 rounded-xl p-4">
+          <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">Último partido integrado</div>
+          <div className="flex items-center justify-between">
+            <div className="text-white font-semibold text-sm">{data.last_match.home_team}</div>
+            <div className="text-green-400 font-bold text-lg font-mono px-3">{data.last_match.score}</div>
+            <div className="text-white font-semibold text-sm text-right">{data.last_match.away_team}</div>
+          </div>
+          {data.last_match.kickoff_time && (
+            <div className="text-slate-500 text-xs text-center mt-1">
+              {new Date(data.last_match.kickoff_time).toLocaleString([], {
+                weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Top 5 marcadores */}
       <div className="bg-slate-800 rounded-xl p-4">
         <h3 className="text-slate-300 font-semibold mb-3">Top 5 Marcadores más Frecuentes</h3>

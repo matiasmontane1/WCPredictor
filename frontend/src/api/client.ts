@@ -242,12 +242,20 @@ export interface TotalGoalsItem {
   pct: number
 }
 
+export interface LastMatchItem {
+  home_team: string
+  away_team: string
+  score: string
+  kickoff_time?: string
+}
+
 export interface WCStats {
   total_matches: number
   top_scorelines: ScorelineItem[]
   margin_distribution: Record<string, number>
   total_goals_distribution: TotalGoalsItem[]
   btts_percentage: number
+  last_match?: LastMatchItem
 }
 
 export function useWCStats() {
