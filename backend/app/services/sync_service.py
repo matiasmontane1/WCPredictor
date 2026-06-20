@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -164,9 +164,17 @@ async def run_daily_sync(db: AsyncSession, job_id: str) -> None:
         phase = await get_active_phase(db)
         weights = await get_weights(db)
 
+        now_utc = datetime.now(timezone.utc)
         for match in match_objects:
-            # Never overwrite suggestions once the match has kicked off
-            if match.status not in ("TIMED", "SCHEDULED"):
+            # Lock suggestions 10 minutes before kickoff (or once match has started)
+            locked = match.status not in ("TIMED", "SCHEDULED")
+            if not locked and match.kickoff_time:
+                try:
+                    kickoff = datetime.fromisoformat(match.kickoff_time.replace("Z", "+00:00"))
+                    locked = now_utc >= kickoff - timedelta(minutes=10)
+                except Exception:
+                    pass
+            if locked:
                 logger.info(f"[{job_id}] Skipping suggestions for {match.home_team} vs {match.away_team} (status={match.status})")
                 continue
 
