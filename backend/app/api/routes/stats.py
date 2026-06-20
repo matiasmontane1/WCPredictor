@@ -42,7 +42,7 @@ async def get_wc_stats(db: AsyncSession = Depends(get_db)):
 
     for m in matches:
         h, a = m.actual_home_goals, m.actual_away_goals
-        scoreline_ctr[f"{h}-{a}"] += 1
+        scoreline_ctr[f"{max(h,a)}-{min(h,a)}"] += 1
         diff = abs(h - a)
         if diff == 0:
             margin_ctr["draw"] += 1
