@@ -5,7 +5,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud import prediction_log as log_crud
 from app.crud import weights as weights_crud
 from app.crud.metrics import get_metrics_for_match
-from app.crud.suggestions import get_suggestions_for_match
 from app.services.engine.poisson import score_probability
 
 MIN_MATCHES_FOR_UPDATE = 5
@@ -28,13 +27,9 @@ def compute_brier_score(prob_matrix: np.ndarray, actual_home: int, actual_away: 
 
 
 async def update_weights(db: AsyncSession, match_id: int) -> dict:
-    # Only evaluate matches that had predictions generated before kickoff
-    suggestions = await get_suggestions_for_match(db, match_id)
-    if not suggestions:
-        return {}
-
+    # Only evaluate matches that had market data scraped before kickoff
     metrics = await get_metrics_for_match(db, match_id)
-    if metrics is None:
+    if metrics is None or not metrics.lambda_market_home:
         return {}
 
     from app.crud.matches import get_match_by_id

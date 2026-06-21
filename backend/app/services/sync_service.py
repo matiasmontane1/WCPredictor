@@ -68,11 +68,10 @@ async def run_daily_sync(db: AsyncSession, job_id: str) -> None:
             updated = await matches_crud.auto_set_result(db, match_obj.id, score_home, score_away)
             if updated is None:
                 continue  # already had a result
-            suggestions = await suggestions_crud.get_suggestions_for_match(db, match_obj.id)
-            if suggestions:
-                existing_log = await log_crud.get_log_for_match(db, match_obj.id)
-                if existing_log is None:
-                    await feedback_engine.update_weights(db, match_obj.id)
+            existing_log = await log_crud.get_log_for_match(db, match_obj.id)
+            if existing_log is None:
+                result = await feedback_engine.update_weights(db, match_obj.id)
+                if result:
                     auto_evaluated += 1
                     logger.info(f"[{job_id}] Auto-evaluated {match_obj.home_team} vs {match_obj.away_team} ({score_home}-{score_away})")
         if auto_evaluated:
