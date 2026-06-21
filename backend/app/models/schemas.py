@@ -220,6 +220,25 @@ class WCStatsOut(BaseModel):
     last_match: Optional[LastMatchItem] = None
 
 
+# --- Feedback Logs ---
+
+class FeedbackLogItem(BaseModel):
+    match_id: int
+    actual_score: str
+    brier_xg: Optional[float] = None
+    brier_market: Optional[float] = None
+    weight_xg_before: Optional[float] = None
+    weight_market_before: Optional[float] = None
+    weight_xg_after: Optional[float] = None
+    weight_market_after: Optional[float] = None
+    evaluated_at: Optional[str] = None
+
+
+class FeedbackLogsOut(BaseModel):
+    total_logs: int
+    logs: list[FeedbackLogItem]
+
+
 # --- Health ---
 
 class HealthOut(BaseModel):

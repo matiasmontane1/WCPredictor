@@ -12,13 +12,19 @@ MIN_MATCHES_FOR_UPDATE = 5
 
 
 def compute_brier_score(prob_matrix: np.ndarray, actual_home: int, actual_away: int) -> float:
-    size = prob_matrix.shape[0]
-    actual_h = min(actual_home, size - 1)
-    actual_a = min(actual_away, size - 1)
+    """1X2 Brier score (range 0-2). More sensitive than full-matrix BS for football."""
+    p_home = float(np.sum(np.tril(prob_matrix, -1)))
+    p_draw = float(np.trace(prob_matrix))
+    p_away = float(np.sum(np.triu(prob_matrix, 1)))
 
-    target = np.zeros_like(prob_matrix)
-    target[actual_h][actual_a] = 1.0
-    return float(np.sum((prob_matrix - target) ** 2))
+    if actual_home > actual_away:
+        t_home, t_draw, t_away = 1.0, 0.0, 0.0
+    elif actual_home == actual_away:
+        t_home, t_draw, t_away = 0.0, 1.0, 0.0
+    else:
+        t_home, t_draw, t_away = 0.0, 0.0, 1.0
+
+    return (p_home - t_home) ** 2 + (p_draw - t_draw) ** 2 + (p_away - t_away) ** 2
 
 
 async def update_weights(db: AsyncSession, match_id: int) -> dict:
