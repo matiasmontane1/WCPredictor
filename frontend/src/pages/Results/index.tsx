@@ -161,15 +161,6 @@ export function Results() {
                             <span className="text-slate-400 text-xs">vs</span>
                           )}
                         </div>
-                        {saved && !isEditing && (
-                          <button
-                            onClick={() => startEdit(match)}
-                            className="absolute right-0 text-slate-400 hover:text-white transition-colors text-base"
-                            title="Editar resultado"
-                          >
-                            ✏️
-                          </button>
-                        )}
                       </div>
 
                       {saved && !isEditing && (consPoints || aggPoints) && activePhase && (
@@ -190,6 +181,17 @@ export function Results() {
                               </div>
                             </div>
                           )}
+                        </div>
+                      )}
+
+                      {saved && !isEditing && (
+                        <div className="flex justify-center">
+                          <button
+                            onClick={() => startEdit(match)}
+                            className="text-slate-400 hover:text-slate-200 text-xs transition-colors"
+                          >
+                            Editar
+                          </button>
                         </div>
                       )}
 
