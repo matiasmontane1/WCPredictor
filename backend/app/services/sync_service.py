@@ -139,6 +139,8 @@ async def run_daily_sync(db: AsyncSession, job_id: str) -> None:
             if result_elo:
                 lh_elo, la_elo = result_elo
                 await metrics_crud.upsert_metrics(db, match.id, {
+                    "xg_home": lh_elo,
+                    "xg_away": la_elo,
                     "lambda_xg_home": lh_elo,
                     "lambda_xg_away": la_elo,
                     "scraper_source": "elo",

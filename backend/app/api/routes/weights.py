@@ -67,6 +67,8 @@ async def backfill_elo(db: AsyncSession = Depends(get_db)):
         if elo_result:
             lh_elo, la_elo = elo_result
             await metrics_crud.upsert_metrics(db, match.id, {
+                "xg_home": lh_elo,
+                "xg_away": la_elo,
                 "lambda_xg_home": lh_elo,
                 "lambda_xg_away": la_elo,
                 "scraper_source": "elo",
