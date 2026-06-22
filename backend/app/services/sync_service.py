@@ -17,7 +17,7 @@ from app.crud.weights import get_weights
 from app.services.engine import feedback as feedback_engine
 from app.services.scrapers import fixtures as fixtures_scraper
 from app.services.scrapers import odds as odds_scraper
-from app.services.scrapers import xg as xg_scraper
+from app.services.scrapers.elo_scraper import get_elo_lambdas
 from app.services.engine.calibrator import solve_lambdas
 from app.services.engine.ensemble import ensemble_distribution
 from app.services.engine.ev import calculate_ev
@@ -129,34 +129,30 @@ async def run_daily_sync(db: AsyncSession, job_id: str) -> None:
                 })
                 odds_synced += 1
 
-        # Step 3: Fetch xG (sync scraper in thread executor)
-        logger.info(f"[{job_id}] Fetching xG from FBref...")
+        # Step 3: Elo-based lambdas as the statistical model
+        logger.info(f"[{job_id}] Computing Elo-based lambdas...")
         loop = asyncio.get_event_loop()
-        xg_data = await loop.run_in_executor(_executor, xg_scraper.get_xg_today)
-
-        if xg_data is not None:
-            xg_source = "fbref"
-            for match in match_objects:
-                key = (match.home_team.lower().strip(), match.away_team.lower().strip())
-                if key in xg_data:
-                    xg_h, xg_a = xg_data[key]
-                    await metrics_crud.upsert_metrics(db, match.id, {
-                        "xg_home": xg_h,
-                        "xg_away": xg_a,
-                        "lambda_xg_home": xg_h,
-                        "lambda_xg_away": xg_a,
-                        "scraper_source": "fbref",
-                    })
-                    xg_synced += 1
-        else:
-            logger.warning(f"[{job_id}] FBref xG scraping failed — using market-calibrated lambdas only")
-            for match in match_objects:
+        for match in match_objects:
+            result_elo = await loop.run_in_executor(
+                _executor, get_elo_lambdas, match.home_team, match.away_team
+            )
+            if result_elo:
+                lh_elo, la_elo = result_elo
+                await metrics_crud.upsert_metrics(db, match.id, {
+                    "lambda_xg_home": lh_elo,
+                    "lambda_xg_away": la_elo,
+                    "scraper_source": "elo",
+                })
+                xg_synced += 1
+            else:
+                # Last resort: copy market lambdas so the model still runs
                 metrics = await metrics_crud.get_metrics_for_match(db, match.id)
                 if metrics and metrics.lambda_market_home:
                     await metrics_crud.upsert_metrics(db, match.id, {
                         "lambda_xg_home": metrics.lambda_market_home,
                         "lambda_xg_away": metrics.lambda_market_away,
                     })
+        xg_source = "elo"
 
         # Step 4: Run engine for each match
         logger.info(f"[{job_id}] Running predictive engine...")
