@@ -151,18 +151,20 @@ export function Results() {
 
                   return (
                     <div key={match.id} className="bg-slate-800 rounded-xl p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-white font-medium text-sm flex-1">{match.home_team}</span>
-                        {saved && !isEditing ? (
-                          <span className="text-green-400 font-bold text-lg mx-3">{ah} - {aa}</span>
-                        ) : (
-                          <span className="text-slate-400 text-xs mx-3">vs</span>
-                        )}
-                        <span className="text-white font-medium text-sm flex-1 text-right">{match.away_team}</span>
+                      <div className="relative flex items-center min-h-[28px]">
+                        <span className="flex-1 text-white font-medium text-sm pr-10">{match.home_team}</span>
+                        <span className="flex-1 text-white font-medium text-sm text-right pl-10">{match.away_team}</span>
+                        <div className="absolute left-1/2 -translate-x-1/2">
+                          {saved && !isEditing ? (
+                            <span className="text-green-400 font-bold text-lg whitespace-nowrap">{ah} - {aa}</span>
+                          ) : (
+                            <span className="text-slate-400 text-xs">vs</span>
+                          )}
+                        </div>
                         {saved && !isEditing && (
                           <button
                             onClick={() => startEdit(match)}
-                            className="ml-3 text-slate-400 hover:text-white transition-colors text-base"
+                            className="absolute right-0 text-slate-400 hover:text-white transition-colors text-base"
                             title="Editar resultado"
                           >
                             ✏️
