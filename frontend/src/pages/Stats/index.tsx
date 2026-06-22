@@ -53,10 +53,10 @@ export function Stats() {
       {data.last_match && (
         <div className="bg-slate-800 rounded-xl p-4">
           <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">Último partido integrado</div>
-          <div className="flex items-center justify-between">
-            <div className="text-white font-semibold text-sm">{data.last_match.home_team}</div>
-            <div className="text-green-400 font-bold text-lg font-mono px-3">{data.last_match.score}</div>
-            <div className="text-white font-semibold text-sm text-right">{data.last_match.away_team}</div>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 text-white font-semibold text-sm">{data.last_match.home_team}</div>
+            <div className="text-green-400 font-bold text-lg font-mono shrink-0 px-2">{data.last_match.score}</div>
+            <div className="flex-1 text-white font-semibold text-sm text-right">{data.last_match.away_team}</div>
           </div>
           {data.last_match.kickoff_time && (
             <div className="text-slate-500 text-xs text-center mt-1">
