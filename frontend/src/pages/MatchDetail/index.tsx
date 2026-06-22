@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useMatchDetail } from '../../api/client'
 import { SuggestionPanel } from '../../components/SuggestionPanel'
 import { IntuitionValidator } from '../../components/IntuitionValidator'
+import { getFlag } from '../../utils/flags'
 
 export function MatchDetail() {
   const { id } = useParams<{ id: string }>()
@@ -42,10 +43,16 @@ export function MatchDetail() {
         <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
           {match.phase?.replace(/_/g, ' ')}
         </div>
-        <div className="flex items-center justify-center gap-4">
-          <span className="text-white font-bold text-lg flex-1 text-right">{match.home_team}</span>
-          <span className="text-slate-400 text-sm">vs</span>
-          <span className="text-white font-bold text-lg flex-1">{match.away_team}</span>
+        <div className="flex items-center justify-center gap-3">
+          <div className="flex-1 flex flex-col items-center gap-1">
+            <span className="text-4xl leading-none">{getFlag(match.home_team)}</span>
+            <span className="text-white font-bold text-base text-center leading-tight">{match.home_team}</span>
+          </div>
+          <span className="text-slate-400 text-sm shrink-0 pb-5">vs</span>
+          <div className="flex-1 flex flex-col items-center gap-1">
+            <span className="text-4xl leading-none">{getFlag(match.away_team)}</span>
+            <span className="text-white font-bold text-base text-center leading-tight">{match.away_team}</span>
+          </div>
         </div>
         {match.kickoff_time && (
           <div className="text-slate-400 text-xs mt-2">

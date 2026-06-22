@@ -1,4 +1,5 @@
 import numpy as np
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -53,8 +54,24 @@ def _fresh_suggestion_pair(metrics, weights, phase) -> SuggestionPair | None:
     )
 
 
+def _is_locked(match) -> bool:
+    if match.status not in ("TIMED", "SCHEDULED"):
+        return True
+    if match.kickoff_time:
+        try:
+            kickoff = datetime.fromisoformat(match.kickoff_time.replace("Z", "+00:00"))
+            return datetime.now(timezone.utc) >= kickoff - timedelta(minutes=10)
+        except Exception:
+            pass
+    return False
+
+
 def _build_summary(match, suggestions, metrics, weights, phase) -> MatchSummary:
-    fresh = _fresh_suggestion_pair(metrics, weights, phase) if suggestions else None
+    if _is_locked(match) or not suggestions:
+        pair = _build_suggestion_pair(suggestions) if suggestions else None
+    else:
+        fresh = _fresh_suggestion_pair(metrics, weights, phase)
+        pair = fresh or (_build_suggestion_pair(suggestions) if suggestions else None)
     return MatchSummary(
         id=match.id,
         match_date=match.match_date,
@@ -65,7 +82,7 @@ def _build_summary(match, suggestions, metrics, weights, phase) -> MatchSummary:
         status=match.status,
         actual_home_goals=match.actual_home_goals,
         actual_away_goals=match.actual_away_goals,
-        suggestions=fresh or (_build_suggestion_pair(suggestions) if suggestions else None),
+        suggestions=pair,
         has_metrics=metrics is not None,
     )
 
