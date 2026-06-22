@@ -43,15 +43,15 @@ export function MatchDetail() {
         <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
           {match.phase?.replace(/_/g, ' ')}
         </div>
-        <div className="flex items-center justify-center gap-3">
-          <div className="flex-1 flex flex-col items-center gap-1">
-            <span className="text-4xl leading-none">{getFlag(match.home_team)}</span>
-            <span className="text-white font-bold text-base text-center leading-tight">{match.home_team}</span>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-1">
+            <span className="text-white font-bold text-base leading-tight">{match.home_team}</span>
+            <span className="text-2xl leading-none shrink-0">{getFlag(match.home_team)}</span>
           </div>
-          <span className="text-slate-400 text-sm shrink-0 pb-5">vs</span>
-          <div className="flex-1 flex flex-col items-center gap-1">
-            <span className="text-4xl leading-none">{getFlag(match.away_team)}</span>
-            <span className="text-white font-bold text-base text-center leading-tight">{match.away_team}</span>
+          <span className="text-slate-400 text-sm shrink-0">vs</span>
+          <div className="flex items-center gap-2 flex-1 justify-end">
+            <span className="text-2xl leading-none shrink-0">{getFlag(match.away_team)}</span>
+            <span className="text-white font-bold text-base leading-tight">{match.away_team}</span>
           </div>
         </div>
         {match.kickoff_time && (
