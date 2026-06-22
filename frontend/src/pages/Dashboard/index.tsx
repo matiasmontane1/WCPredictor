@@ -12,12 +12,14 @@ export function Dashboard() {
         <SyncButton />
       </div>
 
-      <div className="bg-blue-900/30 border border-blue-700/50 rounded-xl p-4 mb-2 text-sm text-blue-200 space-y-1">
-        <div className="font-semibold text-blue-300">Actualización del modelo</div>
-        <p className="text-blue-200/80 leading-snug">
-          Actualmente el modelo está priorizando las cuotas de apuestas, por lo que las sugerencias de hoy podrían apuntar a marcadores con menos goles. A medida que se evalúen más partidos, los pesos se irán ajustando y las sugerencias serán cada vez más precisas.
-        </p>
-      </div>
+      {new Date() <= new Date('2026-06-22T23:59:59') && (
+        <div className="bg-blue-900/30 border border-blue-700/50 rounded-xl p-4 mb-2 text-sm text-blue-200 space-y-1">
+          <div className="font-semibold text-blue-300">Actualización del modelo</div>
+          <p className="text-blue-200/80 leading-snug">
+            Actualmente el modelo está priorizando las cuotas de apuestas, por lo que las sugerencias de hoy podrían apuntar a marcadores con menos goles. A medida que se evalúen más partidos, los pesos se irán ajustando y las sugerencias serán cada vez más precisas.
+          </p>
+        </div>
+      )}
 
       {isLoading && (
         <div className="space-y-3">
