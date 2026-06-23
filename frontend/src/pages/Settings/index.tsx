@@ -30,7 +30,11 @@ export function Settings() {
         )}
       </div>
 
-      <ModelWeightsWidget />
+      <div>
+        <h2 className="text-slate-300 font-semibold mb-3">Pesos del modelo</h2>
+        <ModelWeightsWidget />
+      </div>
+      
     </div>
   )
 }
