@@ -78,6 +78,46 @@ export function MatchDetail() {
         </div>
       )}
 
+      {match.prob_home_win != null && match.prob_draw != null && match.prob_away_win != null && (
+        <div className="bg-slate-800 rounded-xl p-4">
+          <h3 className="text-slate-300 font-semibold mb-3">Probabilidades 1X2</h3>
+          <div className="flex rounded-full overflow-hidden h-7 mb-3">
+            <div
+              className="bg-green-500 flex items-center justify-center text-xs font-bold text-white"
+              style={{ width: `${match.prob_home_win * 100}%` }}
+            >
+              {(match.prob_home_win * 100).toFixed(0)}%
+            </div>
+            <div
+              className="bg-slate-500 flex items-center justify-center text-xs font-bold text-white"
+              style={{ width: `${match.prob_draw * 100}%` }}
+            >
+              {(match.prob_draw * 100).toFixed(0)}%
+            </div>
+            <div
+              className="bg-blue-500 flex items-center justify-center text-xs font-bold text-white"
+              style={{ width: `${match.prob_away_win * 100}%` }}
+            >
+              {(match.prob_away_win * 100).toFixed(0)}%
+            </div>
+          </div>
+          <div className="flex justify-between text-xs text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
+              {match.home_team}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-slate-500 inline-block" />
+              Empate
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
+              {match.away_team}
+            </span>
+          </div>
+        </div>
+      )}
+
       {match.score_distribution.length > 0 && (
         <div className="bg-slate-800 rounded-xl p-4">
           <h3 className="text-slate-300 font-semibold mb-3">Distribución de Probabilidades</h3>

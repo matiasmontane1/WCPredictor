@@ -107,6 +107,9 @@ class MatchDetailOut(BaseModel):
     metrics: Optional[MetricsOut] = None
     score_distribution: list[ScoreDistributionItem] = []
     suggestions: Optional[SuggestionPair] = None
+    prob_home_win: Optional[float] = None
+    prob_draw: Optional[float] = None
+    prob_away_win: Optional[float] = None
 
 
 # --- Sync ---

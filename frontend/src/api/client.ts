@@ -70,6 +70,9 @@ export interface MatchDetail extends MatchSummary {
     implied_prob_away?: number
   }
   score_distribution: ScoreDistributionItem[]
+  prob_home_win?: number
+  prob_draw?: number
+  prob_away_win?: number
 }
 
 export interface ModelWeights {

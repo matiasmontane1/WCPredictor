@@ -164,15 +164,23 @@ async def get_match_detail(match_id: int, db: AsyncSession = Depends(get_db)):
 
     score_distribution = []
     fresh_suggestions = None
+    prob_home_win = None
+    prob_draw = None
+    prob_away_win = None
     if metrics and metrics.lambda_xg_home and metrics.lambda_market_home:
         weights = await get_weights(db)
         phase = await get_active_phase(db)
         prob_matrix = ensemble_distribution(metrics, weights)
         ev_matrix = calculate_ev(prob_matrix, phase) if phase else prob_matrix.copy()
 
+        size = prob_matrix.shape[0]
+        prob_home_win = float(sum(prob_matrix[i][j] for i in range(size) for j in range(size) if i > j))
+        prob_draw = float(sum(prob_matrix[i][i] for i in range(size)))
+        prob_away_win = float(sum(prob_matrix[i][j] for i in range(size) for j in range(size) if j > i))
+
         items = []
-        for i in range(prob_matrix.shape[0]):
-            for j in range(prob_matrix.shape[1]):
+        for i in range(size):
+            for j in range(size):
                 items.append({
                     "score": f"{i}-{j}",
                     "probability": float(prob_matrix[i][j]),
@@ -205,4 +213,7 @@ async def get_match_detail(match_id: int, db: AsyncSession = Depends(get_db)):
         metrics=MetricsOut.model_validate(metrics) if metrics else None,
         score_distribution=score_distribution,
         suggestions=fresh_suggestions or (_build_suggestion_pair(suggestions) if suggestions else None),
+        prob_home_win=prob_home_win,
+        prob_draw=prob_draw,
+        prob_away_win=prob_away_win,
     )
