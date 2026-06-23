@@ -80,7 +80,6 @@ export function MatchDetail() {
 
       {match.prob_home_win != null && match.prob_draw != null && match.prob_away_win != null && (
         <div className="bg-slate-800 rounded-xl p-4">
-          <h3 className="text-slate-300 font-semibold mb-3">Probabilidades 1X2</h3>
           <div className="flex rounded-full overflow-hidden h-7 mb-3">
             <div
               className="bg-green-500 flex items-center justify-center text-xs font-bold text-white"
