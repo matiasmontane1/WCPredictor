@@ -28,10 +28,10 @@ export function ModelWeightsWidget() {
       </div>
       <div className="flex justify-between text-xs text-slate-400 mb-3">
         <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> xG (FBref) {xgPct}%
+          <span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> xG (Estadísticas) {xgPct}%
         </span>
         <span className="flex items-center gap-1">
-          Mercado {mktPct}% <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+          Cuotas Apuestas {mktPct}% <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
         </span>
       </div>
       <div className="flex items-center justify-between">
