@@ -162,6 +162,7 @@ async def get_match_detail(match_id: int, db: AsyncSession = Depends(get_db)):
     metrics = await metrics_crud.get_metrics_for_match(db, match_id)
     suggestions = await suggestions_crud.get_suggestions_for_match(db, match_id)
 
+    locked = _is_locked(match)
     score_distribution = []
     fresh_suggestions = None
     prob_home_win = None
@@ -192,7 +193,7 @@ async def get_match_detail(match_id: int, db: AsyncSession = Depends(get_db)):
             for idx, it in enumerate(items[:15])
         ]
 
-        if suggestions:
+        if not locked and suggestions:
             raw = get_suggestions(ev_matrix, prob_matrix)
             cons, agg = raw["conservative"], raw["aggressive"]
             phase_id = phase.id if phase else None

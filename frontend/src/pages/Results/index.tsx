@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { usePastMatches, useSubmitResult, useActivePhase, usePhaseConfigs } from '../../api/client'
+import { usePastMatches, useSubmitResult, useActivePhase, FIXED_PHASES } from '../../api/client'
 import type { MatchSummary, PhaseConfig } from '../../api/client'
 
 function calcPoints(
@@ -34,12 +34,11 @@ function formatDate(dateStr: string): string {
 export function Results() {
   const { data: matches, isLoading } = usePastMatches()
   const submitResult = useSubmitResult()
-  const activePhase = useActivePhase()
-  const { data: phases } = usePhaseConfigs()
+  const { data: activePhase } = useActivePhase()
 
   function phaseForId(phaseId?: number): PhaseConfig | null {
-    if (!phaseId || !phases) return activePhase
-    return phases.find((p) => p.id === phaseId) ?? activePhase
+    if (!phaseId) return activePhase ?? null
+    return FIXED_PHASES.find((p) => p.id === phaseId) ?? activePhase ?? null
   }
   const [editingId, setEditingId] = useState<number | null>(null)
   const [goals, setGoals] = useState<Record<number, { home: string; away: string }>>({})

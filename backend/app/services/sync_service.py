@@ -28,6 +28,18 @@ logger = logging.getLogger(__name__)
 # In-memory job status store
 job_status: dict[str, dict] = {}
 
+
+def _is_locked_match(match, now_utc: datetime) -> bool:
+    if match.status not in ("TIMED", "SCHEDULED"):
+        return True
+    if match.kickoff_time:
+        try:
+            kickoff = datetime.fromisoformat(match.kickoff_time.replace("Z", "+00:00"))
+            return now_utc >= kickoff - timedelta(minutes=10)
+        except Exception:
+            pass
+    return False
+
 _executor = ThreadPoolExecutor(max_workers=2)
 
 
@@ -104,10 +116,13 @@ async def run_daily_sync(db: AsyncSession, job_id: str) -> None:
 
         # Step 2: Fetch odds
         logger.info(f"[{job_id}] Fetching odds...")
+        now_utc = datetime.now(timezone.utc)
         team_pairs = [(m.home_team, m.away_team) for m in match_objects]
         odds_data = await odds_scraper.get_odds_for_matches(team_pairs)
 
         for match in match_objects:
+            if _is_locked_match(match, now_utc):
+                continue
             key = frozenset([match.home_team.lower().strip(), match.away_team.lower().strip()])
             if key in odds_data:
                 od = odds_data[key]
@@ -133,6 +148,8 @@ async def run_daily_sync(db: AsyncSession, job_id: str) -> None:
         logger.info(f"[{job_id}] Computing Elo-based lambdas...")
         loop = asyncio.get_event_loop()
         for match in match_objects:
+            if _is_locked_match(match, now_utc):
+                continue
             result_elo = await loop.run_in_executor(
                 _executor, get_elo_lambdas, match.home_team, match.away_team
             )
@@ -161,17 +178,8 @@ async def run_daily_sync(db: AsyncSession, job_id: str) -> None:
         phase = await get_active_phase(db)
         weights = await get_weights(db)
 
-        now_utc = datetime.now(timezone.utc)
         for match in match_objects:
-            # Lock suggestions 10 minutes before kickoff (or once match has started)
-            locked = match.status not in ("TIMED", "SCHEDULED")
-            if not locked and match.kickoff_time:
-                try:
-                    kickoff = datetime.fromisoformat(match.kickoff_time.replace("Z", "+00:00"))
-                    locked = now_utc >= kickoff - timedelta(minutes=10)
-                except Exception:
-                    pass
-            if locked:
+            if _is_locked_match(match, now_utc):
                 logger.info(f"[{job_id}] Skipping suggestions for {match.home_team} vs {match.away_team} (status={match.status})")
                 continue
 

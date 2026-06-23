@@ -91,66 +91,18 @@ export interface ValidateOut {
   verdict: 'top_pick' | 'above_average' | 'below_average'
 }
 
+// Fixed phase definitions — mirror of backend FIXED_PHASES in phase_config.py
+export const FIXED_PHASES: PhaseConfig[] = [
+  { id: 1, phase_name: 'Fase de grupos', points_winner: 2, points_goal_diff: 3, points_exact_score: 5, is_active: false, created_at: '' },
+  { id: 2, phase_name: '16avos y 8avos', points_winner: 3, points_goal_diff: 5, points_exact_score: 8, is_active: false, created_at: '' },
+  { id: 3, phase_name: '4tos en adelante', points_winner: 5, points_goal_diff: 7, points_exact_score: 11, is_active: false, created_at: '' },
+]
+
 // --- Phase Config Hooks ---
-export function usePhaseConfigs() {
-  return useQuery<PhaseConfig[]>({
-    queryKey: ['phases'],
-    queryFn: () => api('/config/phase'),
-  })
-}
-
 export function useActivePhase() {
-  const { data: phases } = usePhaseConfigs()
-  return phases?.find((p) => p.is_active) ?? null
-}
-
-export function useCreatePhase() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (data: { phase_name: string; points_winner: number; points_goal_diff: number; points_exact_score: number }) =>
-      api<PhaseConfig>('/config/phase', { method: 'POST', body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['phases'] }),
-  })
-}
-
-export function useActivatePhase() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (id: number) =>
-      api<PhaseConfig>(`/config/phase/${id}/activate`, { method: 'PUT' }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['phases'] })
-      qc.invalidateQueries({ queryKey: ['matches'] })
-    },
-  })
-}
-
-export function useDeactivatePhase() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (id: number) =>
-      api<PhaseConfig>(`/config/phase/${id}/deactivate`, { method: 'PUT' }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['phases'] })
-      qc.invalidateQueries({ queryKey: ['matches'] })
-    },
-  })
-}
-
-export function useUpdatePhase() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { phase_name: string; points_winner: number; points_goal_diff: number; points_exact_score: number } }) =>
-      api<PhaseConfig>(`/config/phase/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['phases'] }),
-  })
-}
-
-export function useDeletePhase() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (id: number) => api(`/config/phase/${id}`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['phases'] }),
+  return useQuery<PhaseConfig>({
+    queryKey: ['phases', 'active'],
+    queryFn: () => api('/config/phase/active'),
   })
 }
 

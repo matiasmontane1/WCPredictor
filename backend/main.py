@@ -11,6 +11,7 @@ from app.core.database import AsyncSessionLocal, init_db
 from app.core.config import settings
 from app.models.schemas import HealthOut
 from app.services.sync_service import run_daily_sync
+from app.crud.phase_config import seed_phases
 
 # Route imports (uncommented as each router is implemented)
 from app.api.routes import config as config_router
@@ -33,6 +34,9 @@ async def _auto_sync():
 async def lifespan(app: FastAPI):
     if not settings.is_production:
         await init_db()
+
+    async with AsyncSessionLocal() as db:
+        await seed_phases(db)
 
     # Startup sync
     asyncio.create_task(_auto_sync())

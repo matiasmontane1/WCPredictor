@@ -1,27 +1,61 @@
-from sqlalchemy import select, update
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.orm import PhaseConfig
-from app.models.schemas import PhaseConfigCreate
+
+CHILE_TZ = ZoneInfo("America/Santiago")
+
+# Fixed phase schedule — IDs are stable and referenced by Suggestion.phase_id
+FIXED_PHASES = [
+    {
+        "id": 1,
+        "phase_name": "Fase de grupos",
+        "points_winner": 2,
+        "points_goal_diff": 3,
+        "points_exact_score": 5,
+    },
+    {
+        "id": 2,
+        "phase_name": "16avos y 8avos",
+        "points_winner": 3,
+        "points_goal_diff": 5,
+        "points_exact_score": 8,
+    },
+    {
+        "id": 3,
+        "phase_name": "4tos en adelante",
+        "points_winner": 5,
+        "points_goal_diff": 7,
+        "points_exact_score": 11,
+    },
+]
 
 
-async def create_phase(db: AsyncSession, data: PhaseConfigCreate) -> PhaseConfig:
-    phase = PhaseConfig(
-        phase_name=data.phase_name,
-        points_winner=data.points_winner,
-        points_goal_diff=data.points_goal_diff,
-        points_exact_score=data.points_exact_score,
-        is_active=False,
-    )
-    db.add(phase)
+def _active_phase_id() -> int:
+    today = datetime.now(CHILE_TZ).date()
+    if today <= date(2026, 6, 27):
+        return 1
+    if today <= date(2026, 7, 7):
+        return 2
+    return 3
+
+
+async def seed_phases(db: AsyncSession) -> None:
+    """Ensure the 3 fixed phases exist in the DB. Safe to call on every startup."""
+    for defn in FIXED_PHASES:
+        result = await db.execute(select(PhaseConfig).where(PhaseConfig.id == defn["id"]))
+        if result.scalar_one_or_none() is None:
+            db.add(PhaseConfig(
+                id=defn["id"],
+                phase_name=defn["phase_name"],
+                points_winner=defn["points_winner"],
+                points_goal_diff=defn["points_goal_diff"],
+                points_exact_score=defn["points_exact_score"],
+                is_active=False,
+            ))
     await db.commit()
-    await db.refresh(phase)
-    return phase
-
-
-async def list_phases(db: AsyncSession) -> list[PhaseConfig]:
-    result = await db.execute(select(PhaseConfig).order_by(PhaseConfig.id))
-    return list(result.scalars().all())
 
 
 async def get_phase(db: AsyncSession, phase_id: int) -> PhaseConfig | None:
@@ -30,45 +64,4 @@ async def get_phase(db: AsyncSession, phase_id: int) -> PhaseConfig | None:
 
 
 async def get_active_phase(db: AsyncSession) -> PhaseConfig | None:
-    result = await db.execute(select(PhaseConfig).where(PhaseConfig.is_active == True))
-    return result.scalar_one_or_none()
-
-
-async def set_active_phase(db: AsyncSession, phase_id: int) -> PhaseConfig:
-    await db.execute(update(PhaseConfig).values(is_active=False))
-    await db.execute(update(PhaseConfig).where(PhaseConfig.id == phase_id).values(is_active=True))
-    await db.commit()
-    result = await db.execute(select(PhaseConfig).where(PhaseConfig.id == phase_id))
-    return result.scalar_one()
-
-
-async def deactivate_phase(db: AsyncSession, phase_id: int) -> PhaseConfig:
-    await db.execute(update(PhaseConfig).where(PhaseConfig.id == phase_id).values(is_active=False))
-    await db.commit()
-    result = await db.execute(select(PhaseConfig).where(PhaseConfig.id == phase_id))
-    return result.scalar_one()
-
-
-async def update_phase(db: AsyncSession, phase_id: int, data: PhaseConfigCreate) -> PhaseConfig:
-    await db.execute(
-        update(PhaseConfig).where(PhaseConfig.id == phase_id).values(
-            phase_name=data.phase_name,
-            points_winner=data.points_winner,
-            points_goal_diff=data.points_goal_diff,
-            points_exact_score=data.points_exact_score,
-        )
-    )
-    await db.commit()
-    result = await db.execute(select(PhaseConfig).where(PhaseConfig.id == phase_id))
-    return result.scalar_one()
-
-
-async def delete_phase(db: AsyncSession, phase_id: int) -> bool:
-    phase = await get_phase(db, phase_id)
-    if phase is None:
-        return False
-    if phase.is_active:
-        raise ValueError("Cannot delete the active phase")
-    await db.delete(phase)
-    await db.commit()
-    return True
+    return await get_phase(db, _active_phase_id())

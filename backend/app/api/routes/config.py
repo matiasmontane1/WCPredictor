@@ -3,52 +3,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.crud import phase_config as crud
-from app.models.schemas import PhaseConfigCreate, PhaseConfigOut
-
+from app.models.schemas import PhaseConfigOut
 
 router = APIRouter(prefix="/config", tags=["config"])
 
 
-@router.get("/phase", response_model=list[PhaseConfigOut])
-async def list_phases(db: AsyncSession = Depends(get_db)):
-    return await crud.list_phases(db)
-
-
-@router.post("/phase", response_model=PhaseConfigOut, status_code=201)
-async def create_phase(data: PhaseConfigCreate, db: AsyncSession = Depends(get_db)):
-    return await crud.create_phase(db, data)
-
-
-@router.put("/phase/{phase_id}/activate", response_model=PhaseConfigOut)
-async def activate_phase(phase_id: int, db: AsyncSession = Depends(get_db)):
-    phase = await crud.get_phase(db, phase_id)
+@router.get("/phase/active", response_model=PhaseConfigOut)
+async def get_active_phase(db: AsyncSession = Depends(get_db)):
+    phase = await crud.get_active_phase(db)
     if phase is None:
-        raise HTTPException(status_code=404, detail="Phase config not found")
-    return await crud.set_active_phase(db, phase_id)
-
-
-@router.put("/phase/{phase_id}", response_model=PhaseConfigOut)
-async def update_phase(phase_id: int, data: PhaseConfigCreate, db: AsyncSession = Depends(get_db)):
-    phase = await crud.get_phase(db, phase_id)
-    if phase is None:
-        raise HTTPException(status_code=404, detail="Phase config not found")
-    return await crud.update_phase(db, phase_id, data)
-
-
-@router.put("/phase/{phase_id}/deactivate", response_model=PhaseConfigOut)
-async def deactivate_phase(phase_id: int, db: AsyncSession = Depends(get_db)):
-    phase = await crud.get_phase(db, phase_id)
-    if phase is None:
-        raise HTTPException(status_code=404, detail="Phase config not found")
-    return await crud.deactivate_phase(db, phase_id)
-
-
-@router.delete("/phase/{phase_id}", status_code=204)
-async def delete_phase(phase_id: int, db: AsyncSession = Depends(get_db)):
-    phase = await crud.get_phase(db, phase_id)
-    if phase is None:
-        raise HTTPException(status_code=404, detail="Phase config not found")
-    try:
-        await crud.delete_phase(db, phase_id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=404, detail="No active phase configured")
+    return phase
