@@ -22,7 +22,6 @@ export function ModelWeightsWidget() {
 
   return (
     <div className="bg-slate-800 rounded-xl p-4">
-      <h3 className="text-slate-300 font-semibold mb-3">Pesos del Modelo</h3>
       <div className="flex rounded-full overflow-hidden h-4 mb-2">
         <div className="bg-green-500 transition-all" style={{ width: `${xgPct}%` }} />
         <div className="bg-blue-500 transition-all" style={{ width: `${mktPct}%` }} />
