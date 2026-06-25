@@ -30,6 +30,12 @@ async def _auto_sync():
         await run_daily_sync(db, "auto")
 
 
+async def _plan_day(scheduler: AsyncIOScheduler):
+    """Runs at 00:05 CLT: initial sync to populate today's matches, then schedules the day's jobs."""
+    await _auto_sync()
+    await schedule_today_syncs(scheduler)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if not settings.is_production:
@@ -47,10 +53,10 @@ async def lifespan(app: FastAPI):
     # Schedule optimal sync times for today based on actual match kickoffs.
     await schedule_today_syncs(scheduler)
 
-    # Daily planner: re-computes and re-registers the day's sync jobs at 00:30 CLT.
+    # Daily planner at 00:05 CLT: syncs today's data, then schedules match-driven jobs.
     scheduler.add_job(
-        schedule_today_syncs,
-        CronTrigger(hour=0, minute=30, timezone=CHILE_TZ),
+        _plan_day,
+        CronTrigger(hour=0, minute=5, timezone=CHILE_TZ),
         args=[scheduler],
         id="daily_planner",
         replace_existing=True,
