@@ -39,7 +39,7 @@ export function NextSyncWidget() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
         </svg>
         <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
-          {next ? `Sync ${formatTime(next)}` : 'Sin sync hoy'}
+          {next ? `Sync ${formatTime(next)}` : 'Sin más syncs hoy'}
         </span>
       </div>
 
