@@ -27,6 +27,14 @@ async def upsert_match(db: AsyncSession, match_data: dict) -> Match:
     return match
 
 
+async def get_matches_for_date(db: AsyncSession, date_str: str) -> list[Match]:
+    """All matches for a given date (any status), used by the smart scheduler."""
+    result = await db.execute(
+        select(Match).where(Match.match_date == date_str).order_by(Match.kickoff_time)
+    )
+    return list(result.scalars().all())
+
+
 async def get_today_matches(db: AsyncSession) -> list[Match]:
     today = datetime.now(CHILE_TZ).date().isoformat()
     result = await db.execute(

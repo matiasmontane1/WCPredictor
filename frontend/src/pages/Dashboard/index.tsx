@@ -1,6 +1,6 @@
 import { useTodayMatches } from '../../api/client'
 import { MatchCard } from '../../components/MatchCard'
-import { SyncButton } from '../../components/SyncButton'
+import { NextSyncWidget } from '../../components/NextSyncWidget'
 
 export function Dashboard() {
   const { data: matches, isLoading, error } = useTodayMatches()
@@ -9,7 +9,7 @@ export function Dashboard() {
     <div className="max-w-lg mx-auto px-4 pt-6 pb-24">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-white text-xl font-bold">Partidos de Hoy</h1>
-        <SyncButton />
+        <NextSyncWidget />
       </div>
 
       {new Date() <= new Date('2026-06-22T23:59:59') && (

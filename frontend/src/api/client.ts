@@ -125,6 +125,15 @@ export function useSyncStatus(jobId: string | null) {
   })
 }
 
+export function useSyncSchedule() {
+  return useQuery({
+    queryKey: ['sync-schedule'],
+    queryFn: () => api<{ scheduled: string[]; next: string | null }>('/sync/schedule'),
+    refetchInterval: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
+  })
+}
+
 // --- Match Hooks ---
 export function useTodayMatches() {
   return useQuery<MatchSummary[]>({

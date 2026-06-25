@@ -1,9 +1,8 @@
-import asyncio
 import logging
 from contextlib import asynccontextmanager
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,6 +13,7 @@ from app.services.sync_service import run_daily_sync
 from app.crud.phase_config import seed_phases
 
 # Route imports (uncommented as each router is implemented)
+from app.services.smart_scheduler import schedule_today_syncs, CHILE_TZ
 from app.api.routes import config as config_router
 from app.api.routes import sync as sync_router
 from app.api.routes import matches as matches_router
@@ -38,13 +38,25 @@ async def lifespan(app: FastAPI):
     async with AsyncSessionLocal() as db:
         await seed_phases(db)
 
-    # Startup sync
-    asyncio.create_task(_auto_sync())
-
-    # Auto-sync every 4 hours
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(_auto_sync, IntervalTrigger(hours=4))
     scheduler.start()
+
+    # Startup sync (awaited so DB is populated before scheduling today's jobs).
+    await _auto_sync()
+
+    # Schedule optimal sync times for today based on actual match kickoffs.
+    await schedule_today_syncs(scheduler)
+
+    # Daily planner: re-computes and re-registers the day's sync jobs at 00:30 CLT.
+    scheduler.add_job(
+        schedule_today_syncs,
+        CronTrigger(hour=0, minute=30, timezone=CHILE_TZ),
+        args=[scheduler],
+        id="daily_planner",
+        replace_existing=True,
+    )
+
+    app.state.scheduler = scheduler
 
     yield
 

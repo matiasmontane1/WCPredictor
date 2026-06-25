@@ -1,6 +1,7 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -8,6 +9,8 @@ from app.models.schemas import SyncResponse, SyncStatusResponse
 from app.services.sync_service import job_status, run_daily_sync
 
 router = APIRouter(prefix="/sync", tags=["sync"])
+
+CHILE_TZ = ZoneInfo("America/Santiago")
 
 
 @router.post("", response_model=SyncResponse, status_code=202)
@@ -24,6 +27,22 @@ async def trigger_sync(background_tasks: BackgroundTasks, db: AsyncSession = Dep
         status="started",
         message=f"Sync running in background. Check /api/v1/sync/status/{job_id} for progress.",
     )
+
+
+@router.get("/schedule")
+async def sync_schedule(request: Request):
+    """Return upcoming smart-sync job times scheduled for today."""
+    scheduler = getattr(request.app.state, "scheduler", None)
+    if scheduler is None:
+        return {"scheduled": [], "next": None}
+
+    times: list[str] = []
+    for job in scheduler.get_jobs():
+        if job.id.startswith("smart_sync_") and job.next_run_time is not None:
+            times.append(job.next_run_time.isoformat())
+
+    times.sort()
+    return {"scheduled": times, "next": times[0] if times else None}
 
 
 @router.get("/status/{job_id}", response_model=SyncStatusResponse)
