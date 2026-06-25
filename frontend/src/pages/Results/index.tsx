@@ -65,22 +65,40 @@ export function Results() {
     }))
   }
 
+  const [selectedType, setSelectedType] = useState<'conservative' | 'aggressive' | null>(null)
+
   const hasResult = (m: MatchSummary) =>
     m.actual_home_goals !== null && m.actual_home_goals !== undefined
 
-  // Accumulated totals (only for matches with results + suggestions)
-  let totalCons = 0
-  let totalAgg = 0
+  type SuggestionStats = { total: number; exact: number; diff: number; winner: number; none: number; points: number }
+  const emptyStat = (): SuggestionStats => ({ total: 0, exact: 0, diff: 0, winner: 0, none: 0, points: 0 })
+
+  const statsCons = emptyStat()
+  const statsAgg = emptyStat()
   let countedMatches = 0
+
   for (const m of matches ?? []) {
     if (!hasResult(m)) continue
     const ah = m.actual_home_goals!
     const aa = m.actual_away_goals!
+
     if (m.suggestions?.conservative) {
-      totalCons += calcPoints(m.suggestions.conservative.score, ah, aa, phaseForId(m.suggestions.conservative.phase_id)).pts
+      const r = calcPoints(m.suggestions.conservative.score, ah, aa, phaseForId(m.suggestions.conservative.phase_id))
+      statsCons.total++
+      statsCons.points += r.pts
+      if (r.label === 'Exacto') statsCons.exact++
+      else if (r.label === 'Dif. goles') statsCons.diff++
+      else if (r.label === 'Ganador') statsCons.winner++
+      else statsCons.none++
     }
     if (m.suggestions?.aggressive) {
-      totalAgg += calcPoints(m.suggestions.aggressive.score, ah, aa, phaseForId(m.suggestions.aggressive.phase_id)).pts
+      const r = calcPoints(m.suggestions.aggressive.score, ah, aa, phaseForId(m.suggestions.aggressive.phase_id))
+      statsAgg.total++
+      statsAgg.points += r.pts
+      if (r.label === 'Exacto') statsAgg.exact++
+      else if (r.label === 'Dif. goles') statsAgg.diff++
+      else if (r.label === 'Ganador') statsAgg.winner++
+      else statsAgg.none++
       countedMatches++
     }
   }
@@ -99,17 +117,82 @@ export function Results() {
 
       {/* Accumulated points counter */}
       {countedMatches > 0 && (
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="bg-green-900/30 border border-green-800 rounded-xl p-3 text-center">
-            <div className="text-green-400 text-xs font-medium mb-1">Conservadora</div>
-            <div className="text-white text-3xl font-bold">{totalCons}</div>
-            <div className="text-green-300 text-xs mt-1">pts acumulados</div>
+        <div className="mb-3">
+          <div className="grid grid-cols-2 gap-3">
+            {(
+              [
+                { type: 'conservative', label: 'Conservadora', stats: statsCons, accent: 'green' },
+                { type: 'aggressive',   label: 'Arriesgada',   stats: statsAgg,  accent: 'orange' },
+              ] as const
+            ).map(({ type, label, stats, accent }) => {
+              const active = selectedType === type
+              const borderCls = active
+                ? accent === 'green' ? 'border-green-500' : 'border-orange-500'
+                : accent === 'green' ? 'border-green-800' : 'border-orange-800'
+              const bgCls = accent === 'green' ? 'bg-green-900/30' : 'bg-orange-900/30'
+              const textCls = accent === 'green' ? 'text-green-400' : 'text-orange-400'
+              const subCls  = accent === 'green' ? 'text-green-300' : 'text-orange-300'
+              return (
+                <button
+                  key={type}
+                  onClick={() => setSelectedType(active ? null : type)}
+                  className={`${bgCls} border ${borderCls} rounded-xl p-3 text-center transition-all cursor-pointer`}
+                >
+                  <div className={`${textCls} text-xs font-medium mb-1`}>{label}</div>
+                  <div className="text-white text-3xl font-bold">{stats.points}</div>
+                  <div className={`${subCls} text-xs mt-1`}>pts acumulados</div>
+                  <div className="text-slate-500 text-[10px] mt-1">{stats.total} partidos · toca para ver detalle</div>
+                </button>
+              )
+            })}
           </div>
-          <div className="bg-orange-900/30 border border-orange-800 rounded-xl p-3 text-center">
-            <div className="text-orange-400 text-xs font-medium mb-1">Arriesgada</div>
-            <div className="text-white text-3xl font-bold">{totalAgg}</div>
-            <div className="text-orange-300 text-xs mt-1">pts acumulados</div>
-          </div>
+
+          {/* Detail panel */}
+          {selectedType && (() => {
+            const s = selectedType === 'conservative' ? statsCons : statsAgg
+            const accent = selectedType === 'conservative' ? 'green' : 'orange'
+            const label = selectedType === 'conservative' ? 'Conservadora' : 'Arriesgada'
+            const headerCls = accent === 'green' ? 'text-green-400' : 'text-orange-400'
+            return (
+              <div className="mt-3 bg-slate-800 border border-slate-700 rounded-xl p-4">
+                <div className={`text-xs font-semibold uppercase tracking-wider mb-3 ${headerCls}`}>
+                  {label} — {s.total} partidos evaluados
+                </div>
+                <div className="grid grid-cols-4 gap-2 text-center mb-3">
+                  {(
+                    [
+                      { key: 'exact',  label: 'Exacto',     value: s.exact,  color: 'text-green-400' },
+                      { key: 'diff',   label: 'Dif. goles', value: s.diff,   color: 'text-yellow-400' },
+                      { key: 'winner', label: 'Ganador',    value: s.winner, color: 'text-blue-400' },
+                      { key: 'none',   label: 'Sin pts',    value: s.none,   color: 'text-slate-500' },
+                    ] as const
+                  ).map(({ key, label: l, value, color }) => (
+                    <div key={key} className="bg-slate-700/60 rounded-lg py-2 px-1">
+                      <div className={`text-2xl font-bold ${color}`}>{value}</div>
+                      <div className="text-slate-400 text-[10px] mt-0.5">{l}</div>
+                    </div>
+                  ))}
+                </div>
+                {s.total > 0 && (
+                  <div className="flex gap-1 rounded-lg overflow-hidden h-2">
+                    {s.exact  > 0 && <div className="bg-green-500"  style={{ flex: s.exact }} />}
+                    {s.diff   > 0 && <div className="bg-yellow-500" style={{ flex: s.diff }} />}
+                    {s.winner > 0 && <div className="bg-blue-500"   style={{ flex: s.winner }} />}
+                    {s.none   > 0 && <div className="bg-slate-600"  style={{ flex: s.none }} />}
+                  </div>
+                )}
+                {s.total > 0 && (
+                  <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                    <span>0%</span>
+                    <span>
+                      {Math.round(((s.exact + s.diff + s.winner) / s.total) * 100)}% con puntos
+                    </span>
+                    <span>100%</span>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </div>
       )}
 
