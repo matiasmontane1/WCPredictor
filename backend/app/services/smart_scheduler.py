@@ -18,7 +18,7 @@ _MERGE_GAP = timedelta(hours=1)
 
 
 def _merge_sync_times(times: list[datetime]) -> list[datetime]:
-    """Iteratively merge adjacent times < 1 hour apart into their midpoint."""
+    """Iteratively merge adjacent times < 1 hour apart into the later of the two."""
     if not times:
         return []
     times = sorted(times)
@@ -29,8 +29,7 @@ def _merge_sync_times(times: list[datetime]) -> list[datetime]:
         i = 0
         while i < len(times):
             if i + 1 < len(times) and times[i + 1] - times[i] < _MERGE_GAP:
-                midpoint = times[i] + (times[i + 1] - times[i]) / 2
-                result.append(midpoint)
+                result.append(times[i + 1])
                 i += 2
                 changed = True
             else:
