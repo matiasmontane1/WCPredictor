@@ -46,7 +46,10 @@ export function NextSyncWidget() {
     )
   }
 
-  const times = data?.scheduled ?? []
+  const allTimes = data?.scheduled ?? []
+  const todayStr = new Date().toLocaleDateString('es-CL', DATE_OPTS)
+  const todayTimes = allTimes.filter(t => new Date(t).toLocaleDateString('es-CL', DATE_OPTS) === todayStr)
+  const times = todayTimes.length > 0 ? todayTimes : allTimes
 
   return (
     <div className="flex items-center gap-1.5 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5">
