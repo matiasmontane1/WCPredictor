@@ -2,6 +2,8 @@ import { useSyncSchedule } from '../../api/client'
 
 const CHILE_TZ = 'America/Santiago'
 
+const DATE_OPTS = { timeZone: CHILE_TZ, year: 'numeric', month: '2-digit', day: '2-digit' } as const
+
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('es-CL', {
     timeZone: CHILE_TZ,
@@ -9,6 +11,13 @@ function formatTime(iso: string): string {
     minute: '2-digit',
     hour12: false,
   })
+}
+
+function formatSyncTime(iso: string): string {
+  const d = new Date(iso)
+  const today = new Date()
+  const isToday = d.toLocaleDateString('es-CL', DATE_OPTS) === today.toLocaleDateString('es-CL', DATE_OPTS)
+  return isToday ? formatTime(iso) : `mañana ${formatTime(iso)}`
 }
 
 function ClockIcon() {
@@ -51,7 +60,7 @@ export function NextSyncWidget() {
             <span key={t} className="flex items-center gap-1.5">
               {i > 0 && <span className="text-slate-700">·</span>}
               <span className={`text-xs font-medium whitespace-nowrap ${i === 0 ? 'text-slate-300' : 'text-slate-500'}`}>
-                {formatTime(t)}
+                {formatSyncTime(t)}
               </span>
             </span>
           ))}
