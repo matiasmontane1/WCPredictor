@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
@@ -36,9 +36,14 @@ async def sync_schedule(request: Request):
     if scheduler is None:
         return {"scheduled": [], "next": None}
 
+    now = datetime.now(timezone.utc)
+    cutoff = now + timedelta(hours=24)
+
     times: list[str] = []
     for job in scheduler.get_jobs():
         if job.next_run_time is None:
+            continue
+        if job.next_run_time > cutoff:
             continue
         if job.id.startswith("smart_sync_") or job.id == "daily_planner":
             times.append(job.next_run_time.isoformat())

@@ -11,6 +11,21 @@ function formatTime(iso: string): string {
   })
 }
 
+function ClockIcon() {
+  return (
+    <svg
+      className="h-3.5 w-3.5 text-slate-400 shrink-0"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
+    </svg>
+  )
+}
+
 export function NextSyncWidget() {
   const { data, isLoading } = useSyncSchedule()
 
@@ -23,31 +38,20 @@ export function NextSyncWidget() {
   }
 
   const times = data?.scheduled ?? []
-  const next = data?.next ?? null
 
   return (
-    <div className="flex flex-col items-end gap-0.5">
-      <div className="flex items-center gap-1.5 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5">
-        <svg
-          className="h-3.5 w-3.5 text-slate-400 shrink-0"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <circle cx="12" cy="12" r="10" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
-        </svg>
-        <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
-          {next ? `Sync ${formatTime(next)}` : 'Sin más syncs hoy'}
-        </span>
-      </div>
-
-      {times.length > 1 && (
-        <div className="flex items-center gap-1 px-1">
-          {times.map((t) => (
-            <span key={t} className="text-[10px] text-slate-600">
-              {formatTime(t)}
+    <div className="flex items-center gap-1.5 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5">
+      <ClockIcon />
+      {times.length === 0 ? (
+        <span className="text-xs text-slate-400 font-medium whitespace-nowrap">Sin más syncs</span>
+      ) : (
+        <div className="flex items-center gap-1.5">
+          {times.map((t, i) => (
+            <span key={t} className="flex items-center gap-1.5">
+              {i > 0 && <span className="text-slate-700">·</span>}
+              <span className={`text-xs font-medium whitespace-nowrap ${i === 0 ? 'text-slate-300' : 'text-slate-500'}`}>
+                {formatTime(t)}
+              </span>
             </span>
           ))}
         </div>
