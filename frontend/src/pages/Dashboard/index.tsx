@@ -7,8 +7,10 @@ export function Dashboard() {
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-6 pb-24">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-2">
         <h1 className="text-white text-xl font-bold">Partidos de Hoy</h1>
+      </div>
+      <div className="mb-6">
         <NextSyncWidget />
       </div>
 
