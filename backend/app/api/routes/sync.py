@@ -38,7 +38,9 @@ async def sync_schedule(request: Request):
 
     times: list[str] = []
     for job in scheduler.get_jobs():
-        if job.id.startswith("smart_sync_") and job.next_run_time is not None:
+        if job.next_run_time is None:
+            continue
+        if job.id.startswith("smart_sync_") or job.id == "daily_planner":
             times.append(job.next_run_time.isoformat())
 
     times.sort()
