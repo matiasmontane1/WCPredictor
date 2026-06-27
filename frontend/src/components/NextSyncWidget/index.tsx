@@ -42,8 +42,9 @@ export function NextSyncWidget() {
   return (
     <div className="flex items-center gap-1.5 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5">
       <ClockIcon />
+      <span className="text-xs text-slate-500 whitespace-nowrap">Se actualiza a las:</span>
       {times.length === 0 ? (
-        <span className="text-xs text-slate-400 font-medium whitespace-nowrap">Sin más syncs</span>
+        <span className="text-xs text-slate-400 font-medium whitespace-nowrap">—</span>
       ) : (
         <div className="flex items-center gap-1.5">
           {times.map((t, i) => (
