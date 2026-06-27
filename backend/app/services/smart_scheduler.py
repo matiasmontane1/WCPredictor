@@ -9,6 +9,8 @@ from app.core.database import AsyncSessionLocal
 from app.crud.matches import get_matches_for_date
 from app.services.sync_service import run_daily_sync
 
+_EARLY_MORNING_CUTOFF_HOUR = 6  # include yesterday's matches before this hour
+
 logger = logging.getLogger(__name__)
 
 CHILE_TZ = ZoneInfo("America/Santiago")
@@ -91,9 +93,16 @@ async def schedule_today_syncs(scheduler: AsyncIOScheduler) -> None:
         if job.id.startswith("smart_sync_"):
             job.remove()
 
-    today_str = datetime.now(CHILE_TZ).date().isoformat()
+    now_chile = datetime.now(CHILE_TZ)
+    today_str = now_chile.date().isoformat()
     async with AsyncSessionLocal() as db:
-        matches = await get_matches_for_date(db, today_str)
+        matches = list(await get_matches_for_date(db, today_str))
+        # Before 6 AM, a late match from yesterday may still have a future
+        # post-match sync (e.g. kickoff 22:45 → sync 01:00). Include it so
+        # the job isn't silently dropped when the planner removes all smart_sync_*.
+        if now_chile.hour < _EARLY_MORNING_CUTOFF_HOUR:
+            yesterday_str = (now_chile.date() - timedelta(days=1)).isoformat()
+            matches += list(await get_matches_for_date(db, yesterday_str))
 
     now_utc = datetime.now(timezone.utc)
     sync_times = _compute_sync_times(matches, now_utc)
