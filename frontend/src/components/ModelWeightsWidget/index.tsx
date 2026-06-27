@@ -78,7 +78,7 @@ export function ModelWeightsWidget() {
 
       {confirming && (
         <div className="mt-3 space-y-2">
-          <p className="text-xs text-slate-400">Ingresá la clave para resetear los pesos:</p>
+          <p className="text-xs text-slate-400">Ingresa la clave para resetear los pesos:</p>
           <div className="flex gap-2">
             <input
               type="password"
