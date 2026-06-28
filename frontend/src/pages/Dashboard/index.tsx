@@ -41,7 +41,6 @@ export function Dashboard() {
         <div className="text-center py-16 text-slate-500">
           <div className="text-4xl mb-3">⚽</div>
           <p className="font-medium">No hay partidos hoy</p>
-          <p className="text-sm mt-1">Sincronizá para actualizar</p>
         </div>
       )}
 
