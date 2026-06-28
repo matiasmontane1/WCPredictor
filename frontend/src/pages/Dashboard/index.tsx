@@ -14,15 +14,6 @@ export function Dashboard() {
         <NextSyncWidget />
       </div>
 
-      {new Date() <= new Date('2026-06-22T23:59:59') && (
-        <div className="bg-blue-900/30 border border-blue-700/50 rounded-xl p-4 mb-2 text-sm text-blue-200 space-y-1">
-          <div className="font-semibold text-blue-300">Actualización del modelo</div>
-          <p className="text-blue-200/80 leading-snug">
-            Actualmente el modelo está priorizando las cuotas de apuestas, por lo que las sugerencias de hoy podrían apuntar a marcadores con menos goles. A medida que se evalúen más partidos, los pesos se irán ajustando y las sugerencias serán cada vez más precisas.
-          </p>
-        </div>
-      )}
-
       {isLoading && (
         <div className="space-y-3">
           {[1, 2].map((i) => (
@@ -33,14 +24,14 @@ export function Dashboard() {
 
       {error && (
         <div className="bg-red-900/40 border border-red-700 rounded-xl p-4 text-red-300 text-sm text-center">
-          Error al cargar los partidos. Verificá que el servidor esté corriendo.
+          Error al cargar los partidos. Verifica que el servidor esté corriendo.
         </div>
       )}
 
       {!isLoading && !error && matches?.length === 0 && (
         <div className="text-center py-16 text-slate-500">
           <div className="text-4xl mb-3">⚽</div>
-          <p className="font-medium">No hay partidos hoy</p>
+          <p className="font-medium">No hay más partidos hoy</p>
         </div>
       )}
 
