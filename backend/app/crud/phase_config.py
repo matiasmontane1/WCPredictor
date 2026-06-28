@@ -42,6 +42,16 @@ def _active_phase_id() -> int:
     return 3
 
 
+def phase_id_for_date(match_date: str) -> int:
+    """Return the phase ID that was active on the given match date."""
+    d = date.fromisoformat(match_date)
+    if d <= date(2026, 6, 27):
+        return 1
+    if d <= date(2026, 7, 7):
+        return 2
+    return 3
+
+
 async def seed_phases(db: AsyncSession) -> None:
     """Ensure the 3 fixed phases exist in the DB. Safe to call on every startup."""
     for defn in FIXED_PHASES:

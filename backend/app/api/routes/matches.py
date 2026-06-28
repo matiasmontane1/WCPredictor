@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.crud import matches as matches_crud
 from app.crud import metrics as metrics_crud
 from app.crud import suggestions as suggestions_crud
-from app.crud.phase_config import get_active_phase
+from app.crud.phase_config import get_active_phase, phase_id_for_date
 from app.crud.weights import get_weights
 from app.models.schemas import (
     MatchDetailOut, MatchSummary, MetricsOut,
@@ -20,7 +20,7 @@ from app.services.engine.suggester import get_suggestions
 router = APIRouter(prefix="/matches", tags=["matches"])
 
 
-def _build_suggestion_pair(suggestions) -> SuggestionPair:
+def _build_suggestion_pair(suggestions, fallback_phase_id: int | None = None) -> SuggestionPair:
     conservative = next((s for s in suggestions if s.suggestion_type == "conservative"), None)
     aggressive = next((s for s in suggestions if s.suggestion_type == "aggressive"), None)
     return SuggestionPair(
@@ -28,13 +28,13 @@ def _build_suggestion_pair(suggestions) -> SuggestionPair:
             score=f"{conservative.score_home}-{conservative.score_away}",
             probability=conservative.probability,
             ev=conservative.ev,
-            phase_id=conservative.phase_id,
+            phase_id=conservative.phase_id if conservative.phase_id is not None else fallback_phase_id,
         ) if conservative else None,
         aggressive=SuggestionOut(
             score=f"{aggressive.score_home}-{aggressive.score_away}",
             probability=aggressive.probability,
             ev=aggressive.ev,
-            phase_id=aggressive.phase_id,
+            phase_id=aggressive.phase_id if aggressive.phase_id is not None else fallback_phase_id,
         ) if aggressive else None,
     )
 
@@ -108,8 +108,10 @@ async def get_past_matches(db: AsyncSession = Depends(get_db)):
         suggestions = await suggestions_crud.get_suggestions_for_match(db, match.id)
         if not suggestions:
             continue
-        # Use stored suggestions (locked at last sync before kickoff) — never recompute for past matches
-        stored_pair = _build_suggestion_pair(suggestions)
+        # Use stored suggestions (locked at last sync before kickoff) — never recompute for past matches.
+        # Fallback phase_id from match date covers old suggestions that were stored before phase_id existed.
+        fallback = phase_id_for_date(match.match_date)
+        stored_pair = _build_suggestion_pair(suggestions, fallback_phase_id=fallback)
         metrics = await metrics_crud.get_metrics_for_match(db, match.id)
         result.append(MatchSummary(
             id=match.id,
