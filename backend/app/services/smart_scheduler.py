@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 CHILE_TZ = ZoneInfo("America/Santiago")
 _PRE_OFFSET = timedelta(hours=1)
-_POST_OFFSET = timedelta(hours=2, minutes=15)
+_POST_OFFSET = timedelta(hours=3)
 _MERGE_GAP = timedelta(hours=1)
 
 
@@ -44,7 +44,7 @@ def _merge_sync_times(times: list[datetime]) -> list[datetime]:
 def _compute_sync_times(matches, now_utc: datetime) -> list[datetime]:
     """
     Given matches for today, compute pre-match (kickoff - 1h) and post-match
-    (kickoff + 2h15m) sync times, discard past times, then merge those < 1h apart.
+    (kickoff + 3h) sync times, discard past times, then merge those < 1h apart.
 
     Kickoff times may be stored in any timezone (from football-data.org); all
     arithmetic is done in UTC so the Chile server clock doesn't affect correctness.
