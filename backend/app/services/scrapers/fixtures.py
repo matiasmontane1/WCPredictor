@@ -82,7 +82,8 @@ async def get_today_matches() -> list[dict]:
                 "status": api_status,
             }
             if api_status == "FINISHED":
-                ft = m.get("score", {}).get("fullTime", {})
+                score_obj = m.get("score", {})
+                ft = _regular_time_score(score_obj)
                 if ft.get("home") is not None and ft.get("away") is not None:
                     entry["score_home"] = ft["home"]
                     entry["score_away"] = ft["away"]
@@ -92,6 +93,21 @@ async def get_today_matches() -> list[dict]:
     except httpx.HTTPError as e:
         logger.error(f"Fixtures scraper error: {e}")
         return []
+
+
+def _regular_time_score(score_obj: dict) -> dict:
+    """Return the 90-minute score, ignoring extra time and penalty goals.
+
+    football-data.org v4 uses fullTime for the cumulative score at the end of
+    play (including ET goals). regularTime holds only the 90-minute result for
+    matches that went beyond regular time.
+    """
+    duration = score_obj.get("duration", "REGULAR")
+    if duration in ("EXTRA_TIME", "PENALTY_SHOOTOUT"):
+        reg = score_obj.get("regularTime") or {}
+        if reg.get("home") is not None and reg.get("away") is not None:
+            return reg
+    return score_obj.get("fullTime") or {}
 
 
 async def get_all_wc_matches() -> list[dict]:
@@ -131,7 +147,8 @@ async def get_all_wc_matches() -> list[dict]:
                 "status": api_status,
             }
             if api_status == "FINISHED":
-                ft = m.get("score", {}).get("fullTime", {})
+                score_obj = m.get("score", {})
+                ft = _regular_time_score(score_obj)
                 if ft.get("home") is not None and ft.get("away") is not None:
                     entry["score_home"] = ft["home"]
                     entry["score_away"] = ft["away"]
