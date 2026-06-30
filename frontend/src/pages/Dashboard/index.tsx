@@ -1,14 +1,30 @@
+import { useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTodayMatches } from '../../api/client'
 import { MatchCard } from '../../components/MatchCard'
 import { NextSyncWidget } from '../../components/NextSyncWidget'
 
 export function Dashboard() {
   const { data: matches, isLoading, error } = useTodayMatches()
+  const navigate = useNavigate()
+  const tapCount = useRef(0)
+  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function handleTitleTap() {
+    tapCount.current += 1
+    if (tapTimer.current) clearTimeout(tapTimer.current)
+    if (tapCount.current >= 5) {
+      tapCount.current = 0
+      navigate('/admin')
+      return
+    }
+    tapTimer.current = setTimeout(() => { tapCount.current = 0 }, 1500)
+  }
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-6 pb-24">
       <div className="mb-2">
-        <h1 className="text-white text-xl font-bold">Partidos de Hoy</h1>
+        <h1 className="text-white text-xl font-bold cursor-default select-none" onClick={handleTitleTap}>Partidos de Hoy</h1>
       </div>
       <div className="mb-6">
         <NextSyncWidget />
