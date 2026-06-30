@@ -61,29 +61,28 @@ export function Admin() {
   const [submitted, setSubmitted] = useState('')
   const [input, setInput] = useState('')
 
+  const queryOpts = { enabled: !!submitted, retry: false, staleTime: Infinity, refetchOnWindowFocus: false }
+
   const calibrationQ = useQuery({
     queryKey: ['admin', 'calibration', submitted],
     queryFn: () => adminApi<{ phases: PhaseCalibration[] }>('/admin/calibration', submitted),
-    enabled: !!submitted,
-    retry: false,
+    ...queryOpts,
   })
 
   const logsQ = useQuery({
     queryKey: ['admin', 'logs', submitted],
     queryFn: () => adminApi<{ logs: LogEntry[] }>('/admin/logs', submitted),
-    enabled: !!submitted,
-    retry: false,
+    ...queryOpts,
   })
 
   const weightsQ = useQuery({
     queryKey: ['admin', 'weights', submitted],
     queryFn: () => adminApi<Weights>('/admin/weights', submitted),
-    enabled: !!submitted,
-    retry: false,
+    ...queryOpts,
   })
 
-  const isUnauthorized =
-    calibrationQ.isError || logsQ.isError || weightsQ.isError
+  const isLoading = calibrationQ.isLoading || logsQ.isLoading || weightsQ.isLoading
+  const isUnauthorized = !isLoading && (calibrationQ.isError || logsQ.isError || weightsQ.isError)
 
   if (!submitted) {
     return (
