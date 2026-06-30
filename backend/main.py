@@ -21,6 +21,7 @@ from app.api.routes import validate as validate_router
 from app.api.routes import results as results_router
 from app.api.routes import weights as weights_router
 from app.api.routes import stats as stats_router
+from app.api.routes import admin as admin_router
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +92,7 @@ app.include_router(validate_router.router, prefix="/api/v1")
 app.include_router(results_router.router, prefix="/api/v1")
 app.include_router(weights_router.router, prefix="/api/v1")
 app.include_router(stats_router.router, prefix="/api/v1")
+app.include_router(admin_router.router, prefix="/api/v1")
 
 
 @app.get("/api/v1/health", response_model=HealthOut)

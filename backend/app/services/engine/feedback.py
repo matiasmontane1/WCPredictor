@@ -54,6 +54,11 @@ async def update_weights(db: AsyncSession, match_id: int) -> dict:
     bs_a = compute_brier_score(matrix_a, match.actual_home_goals, match.actual_away_goals)
     bs_b = compute_brier_score(matrix_b, match.actual_home_goals, match.actual_away_goals)
 
+    ensemble = weights.weight_xg * matrix_a + weights.weight_market * matrix_b
+    prob_home = float(np.sum(np.tril(ensemble, -1)))
+    prob_draw = float(np.trace(ensemble))
+    prob_away = float(np.sum(np.triu(ensemble, 1)))
+
     # Use actual log count to self-heal any counter drift
     actual_log_count = await log_crud.get_log_count(db)
     new_count = actual_log_count + 1
@@ -62,6 +67,9 @@ async def update_weights(db: AsyncSession, match_id: int) -> dict:
         "match_id": match_id,
         "actual_home_goals": match.actual_home_goals,
         "actual_away_goals": match.actual_away_goals,
+        "prob_home": prob_home,
+        "prob_draw": prob_draw,
+        "prob_away": prob_away,
         "model_a_error": bs_a,
         "model_b_error": bs_b,
         "weight_xg_before": weights.weight_xg,

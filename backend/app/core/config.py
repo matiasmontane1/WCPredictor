@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     FOOTBALL_DATA_API_KEY: str = ""
     SUPABASE_URL: str = ""
     SUPABASE_KEY: str = ""
+    ADMIN_PASSWORD: str = "admin"
 
     @property
     def is_production(self) -> bool:

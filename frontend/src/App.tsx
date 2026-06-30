@@ -9,6 +9,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default:
 const MatchDetail = lazy(() => import('./pages/MatchDetail').then((m) => ({ default: m.MatchDetail })))
 const Results = lazy(() => import('./pages/Results').then((m) => ({ default: m.Results })))
 const Stats = lazy(() => import('./pages/Stats').then((m) => ({ default: m.Stats })))
+const Admin = lazy(() => import('./pages/Admin').then((m) => ({ default: m.Admin })))
 
 function PageLoader() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
               <Route path="/results" element={<Results />} />
               <Route path="/stats" element={<Stats />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/admin" element={<Admin />} />
             </Routes>
           </Suspense>
           <BottomNav />
