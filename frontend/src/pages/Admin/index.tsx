@@ -58,7 +58,6 @@ function BrierCell({ value }: { value: number | null }) {
 }
 
 export function Admin() {
-  const [password, setPassword] = useState('')
   const [submitted, setSubmitted] = useState('')
   const [input, setInput] = useState('')
 
