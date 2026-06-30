@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useModelWeights, useResetWeights } from '../../api/client'
 
-const RESET_KEY = 'Matias2803'
+const RESET_KEY = import.meta.env.ADMIN_PASSWORD || 'admin'
 
 export function ModelWeightsWidget() {
   const { data: weights, isLoading } = useModelWeights()
